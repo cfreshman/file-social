@@ -34,7 +34,7 @@
     }
     body {
       font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      padding: .5rem 1rem;
+      padding: .5rem .5rem;
       overflow-x: visible;
     }
     a {
@@ -352,10 +352,11 @@
           if (backdrop) {
             const ext = backdrop.split('.').pop().toLowerCase()
             const BACKDROP_OPACITY = 0.5
+            const backdropStyles = `position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1;`
             if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
               const img = document.createElement('img')
               img.src = backdrop
-              img.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: ${BACKDROP_OPACITY}; image-rendering: pixelated;`
+              img.style.cssText = backdropStyles + `opacity: ${BACKDROP_OPACITY}; image-rendering: pixelated;`
               document.body.prepend(img)
             } else if (['mp4', 'webm'].includes(ext)) {
               const video = document.createElement('video')
@@ -363,13 +364,11 @@
               video.autoplay = true
               video.loop = true
               video.muted = true
-              video.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: ${BACKDROP_OPACITY}; image-rendering: pixelated;`
+              video.style.cssText = backdropStyles + `opacity: ${BACKDROP_OPACITY}; image-rendering: pixelated;`
               document.body.prepend(video)
             } else {
-              // Treat as CSS color
-              const div = document.createElement('div')
-              div.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: ${backdrop};`
-              document.body.prepend(div)
+              // Treat as CSS color/gradient - set body background
+              document.body.style.background = backdrop
             }
           }
 
@@ -379,7 +378,7 @@
           const renderVideo = (src) => {
             const videoId = `video-${src.replace(/[^a-zA-Z0-9]/g, '-')}`
             return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: flex-start;">
-            <div style="position: relative; display: inline-block;">
+            <div style="position: relative; display: inline-flex;">
               <video id="${videoId}" src="${src}" loop muted playsinline webkit-playsinline autoplay style="max-height: 400px; max-width: 100%; width: auto; height: auto; object-fit: contain; cursor: pointer;" onclick="
                 event.preventDefault();
                 const btn = this.nextElementSibling;
@@ -394,7 +393,7 @@
                 video.controls = true;
                 video.style.cursor = 'default';
                 this.remove();
-              " style="position: absolute; bottom: 1em; right: 1em; background: rgba(0,0,0,0.7); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; padding: 0; pointer-events: auto;">
+              " style="position: absolute; bottom: 1em; right: 1em; background: rgba(0,0,0,0.7); border: none; border-radius: 5px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; padding: 0; pointer-events: auto;">
                 <i class="ph-fill ph-speaker-simple-x" style="font-size: 22px;"></i>
               </button>
             </div>
