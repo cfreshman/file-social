@@ -58,6 +58,10 @@ echo -e "✓ Created posts/ directory structure"
 mkdir -p public/config
 echo -e "✓ Created public/config/ directory"
 
+# Create public/data directory
+mkdir -p public/data
+echo -e "✓ Created public/data/ directory"
+
 echo ""
 
 # Create default config files if they don't exist

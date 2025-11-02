@@ -4,11 +4,25 @@
   <meta charset=utf-8><script src="/lib.js"></script><meta data-hydrate data-style />
   <title>Example Post</title><meta name=description content="This is an example post for file-social" />
   <style>
+    /* standard styles for file-social */
+    img, video, iframe {
+      max-width: 100%;
+      max-height: 400px;
+      flex-shrink: 1;
+      object-fit: contain;
+      object-position: left;
+      image-rendering: pixelated;
+    }
+    iframe {
+      max-height: 800px;
+    }
+
     /* Optional: add custom styles */
+
     body {
       max-width: 600px;
     }
-    
+
     .highlight {
       background: #fff3cd;
       padding: 0.25em;

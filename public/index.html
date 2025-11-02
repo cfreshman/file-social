@@ -82,7 +82,7 @@
   ">
     <button onclick="
     window['scrollToItem']()
-    ">selected</button>
+    ">jump to selection</button>
     <button onclick="
     setUrlParams({}, { unset: [''] })
     Q('#floater').style.display = 'none'
@@ -121,6 +121,7 @@
         display: flex;
         align-items: center;
         gap: 0.5em;
+        margin-top: 0.25em;
       }
       #list-header button.active {
         opacity: 1;
@@ -196,7 +197,7 @@
     </style>
     <script>
       const has_search = location.search.slice(2)
-      Q('#floater').style.display = has_search && !devices.is_mobile ? '' : 'none'
+      Q('#floater').style.display = has_search ? '' : 'none'
 
       const scrollToItem = window['scrollToItem'] = (item=new URLSearchParams(location.search).get('')?.split('?')[0]) => {
         if (item) {
@@ -421,7 +422,7 @@
                 list.classList.add(filterClass)
                 setUrlParams({ tag })
               }
-            ">${tagName.toUpperCase()}</button>
+            ">${tagName}</button>
           `).join('')
           
           list.innerHTML = `
@@ -431,9 +432,25 @@
             </div>
           `
           
-          list.innerHTML += files
+          // Pre-process .url files
+          const processedFiles = await Promise.all(files
             .filter(file => !file.startsWith(METADATA_PREFIX))
-            .map(file => {
+            .map(async file => {
+              if (file.endsWith('.url')) {
+                try {
+                  const response = await fetch(`/posts/${file}`)
+                  const url = (await response.text()).trim()
+                  return { file, url }
+                } catch {
+                  return { file, url: null }
+                }
+              }
+              return { file, url: null }
+            })
+          )
+
+          list.innerHTML += processedFiles
+            .map(({ file, url }) => {
               const path = `/posts/${file}`
               // Extract name and extension, handling files without extensions
               const lastDotIndex = file.lastIndexOf('.')
@@ -454,10 +471,15 @@
                     const L = event.target
                     let prev_height = undefined
                     const resize = () => {
-                      L.height = L.contentWindow.document.documentElement.scrollHeight / 2
-                      L.height = L.contentWindow.document.documentElement.scrollHeight + 8 + 16
-                      const changed = L.height !== prev_height
-                      prev_height = L.height
+                      L.height = 400
+                      L.height = L.contentWindow.document.documentElement.scrollHeight + 24
+                      const min400 = L.height
+                      L.height = 0
+                      L.height = L.contentWindow.document.documentElement.scrollHeight + 24
+                      const min0 = L.height
+                      const height = min0 === 0 ? min400 : min0
+                      const changed = height !== prev_height
+                      prev_height = height
                       return changed
                     }
                     const resize_loop = () => {
@@ -465,21 +487,6 @@
                       else setTimeout(() => requestAnimationFrame(resize_loop), 1_000)
                     }
                     requestAnimationFrame(() => requestAnimationFrame(resize_loop))
-
-                    if ('${file}' === location.search.slice(2)) {
-                      window['scrollToItem']()
-                    }
-
-                    try {
-                      if (L.src === L.contentWindow.window.location.href && ${ext === '.href.txt'}) {
-                        L.contentWindow.window.location.href = L.contentWindow.window.document.body.textContent
-                      } else if (!L.contentWindow.window.location.pathname.includes('/raw')) {
-                        defer(() => {
-                          L.style.minHeight = 0
-                          L.style.minHeight = \`max(100px, \${(L.contentWindow.window.document.body.querySelector('.body')?.scrollHeight||0)+'px'});\`
-                        }, 1_000)
-                      }
-                    } catch {}
                     "></iframe>`
                   default:
                     // Unknown extension for URL content - try as iframe
@@ -487,19 +494,21 @@
                 }
               }
 
+              // Handle .url files with pre-fetched URL
+              if (extension.toLowerCase() === '.url' && url) {
+                const lastDot = url.lastIndexOf('.')
+                const lastSlash = url.lastIndexOf('/')
+                // If no extension or extension before last slash, treat as HTML
+                const urlExt = (lastDot > lastSlash && lastDot !== -1) 
+                  ? url.substring(lastDot).toLowerCase().split('?')[0]
+                  : '.html'
+                return renderByExtension(url, urlExt)
+              }
+              
               switch (extension.toLowerCase()) {
                 case '.url':
-                  // Load URL from file and render based on URL's extension
-                  const urlContentId = `url-content-${name.replace(/[^a-zA-Z0-9]/g, '-')}`
-                  return {
-                    id: urlContentId,
-                    fetcher: async () => {
-                      const response = await fetch(path)
-                      const url = (await response.text()).trim()
-                      const urlExt = url.substring(url.lastIndexOf('.')).toLowerCase().split('?')[0]
-                      return renderByExtension(url, urlExt)
-                    }
-                  }
+                  // Fallback if URL fetch failed
+                  return `<div class='content'>Error loading URL file</div>`
                 case '.png': case '.jpg': case '.jpeg': case '.gif': case '.webp':
                 case '.mp4': case '.webm':
                 case '.html': case '.htm': case '.href.txt': case '.txt': case '.md': 
@@ -525,12 +534,16 @@
               }
             })
             .map((render, i) => {
-              const encoded = files[i]
+              const encoded = processedFiles[i].file
+              const url = processedFiles[i].url
               const name = decodeURIComponent(encoded)
               const socials = (window['stream-item-socials'] || {})[name]
 
               const id = `item-${encoded.split('.')[0].replace(/\//g, '-')}`
               const pinned = pins[1].has(name)
+              
+              // For .url files, use the actual URL for "new tab" link
+              const newTabHref = url || `${location.origin}/posts/${name}`
               
               // Check all tags for this item
               const itemTags = Object.keys(tags).filter(tagName => tags[tagName].has(name))
@@ -542,21 +555,12 @@
               itemTags.length && log({name, tags: itemTags, pinned})
               let load_on_scroll_into_view
               
-              // Handle object return (text files and .url files with lazy loader)
-              if (typeof render === 'object' && (render.html || render.fetcher)) {
+              // Handle object return (text files with lazy loader)
+              if (typeof render === 'object' && render.html) {
                 renders[id] = render
                 if (pinned) {
-                  if (render.html) {
-                    load_on_scroll_into_view = render.html
-                    render.load() // Load immediately for pinned
-                  } else if (render.fetcher) {
-                    // For .url files, load immediately if pinned
-                    load_on_scroll_into_view = `<div class='render-target content'></div>`
-                    render.fetcher().then(html => {
-                      const target = Q(`#${id} .render-target`)
-                      if (target) target.outerHTML = html
-                    })
-                  }
+                  load_on_scroll_into_view = render.html
+                  render.load() // Load immediately for pinned
                 } else {
                   load_on_scroll_into_view = `<div class='render-target content'></div>`
                 }
@@ -595,7 +599,7 @@
                 `<div class="label hidden" style="
                 bottom: 1.5em;
                 ${item === name ? '' : 'display: none;'}
-                "><a target="_blank" href="${location.origin}/posts/${name}">new tab ↗</a></div>`
+                "><a target="_blank" href="${newTabHref}">new tab ↗</a></div>`
               }
               <div class="label">${
                 `<a href="#" data-post="${encoded}" onclick="
@@ -676,6 +680,16 @@
           // Initial setup
           setupVideoObservers()
 
+          // Handle initial selection from URL
+          if (item) {
+            const selectedId = `item-${item.split('.')[0].replace(/\//g, '-')}`
+            const selectedItem = document.querySelector(`#${selectedId}`)
+            if (selectedItem) {
+              QQ(selectedItem, '.label').forEach(label => label.style.display = 'unset')
+              document.title = item
+            }
+          }
+
           // Apply tag filter from URL if present
           const currentParams = {}
           const searchString = location.search.slice(1)
@@ -724,12 +738,6 @@
                       render_target.outerHTML = renderData.html
                       renderData.load()
                       setupVideoObservers()
-                    } else if (typeof renderData === 'object' && renderData.fetcher) {
-                      // Handle .url files with async fetcher
-                      renderData.fetcher().then(html => {
-                        render_target.outerHTML = html
-                        setupVideoObservers()
-                      })
                     } else {
                       render_target.outerHTML = renderData
                       setupVideoObservers()
@@ -772,7 +780,6 @@
           }
           on(window, 'scroll click', () => handleScroll())
           handleScroll()
-          requestAnimationFrame(() => requestAnimationFrame(() => scrollToItem()))
 
           // Set up iframe event listeners (for both immediate and lazy-loaded iframes)
           const setupIframeLinks = (frame) => {

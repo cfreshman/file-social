@@ -10,6 +10,10 @@ posts/2025/11/01/*
 !posts/2025/11/01/0.html
 public/config/*
 !public/config/.gitkeep
+public/data/*
+!public/data/.gitkeep
+!public/data/example/
+!public/data/example/**
 .env
 *.log
 .DS_Store
