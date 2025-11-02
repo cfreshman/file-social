@@ -14,7 +14,19 @@ Self-hosted visual timeline platform. Share any file type in a beautiful feed.
 Open your terminal in this folder and run:
 
 ```bash
-npm install
+npm run setup
+```
+
+This will:
+- Check your system has everything needed
+- Install dependencies
+- Create the directory structure
+- Set up config files
+- Prepare git to track your posts
+
+Then start the server:
+
+```bash
 npm start
 ```
 

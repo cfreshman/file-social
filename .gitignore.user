@@ -1,0 +1,8 @@
+node_modules/
+public/config/*
+!public/config/.gitkeep
+.env
+*.log
+.DS_Store
+deploy/config.sh
+

@@ -5,6 +5,7 @@
   "main": "server/index.js",
   "type": "module",
   "scripts": {
+    "setup": "./setup.sh",
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "new": "node scripts/new-post.js",
