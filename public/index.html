@@ -105,7 +105,7 @@
     transform: translate3d(0,0,0);
     " onclick="
     event.preventDefault()
-    Q('#list').scrollIntoView({block:'start'})
+    window.scrollTo({top: 0, behavior: 'instant'})
     ">scroll to top</button>
     <style>
       body {
@@ -750,28 +750,36 @@
                 }
               })
               
-              // Unload/reload iframes based on viewport distance
-              QQ(list, '.item iframe').forEach(iframe => {
-                const rect = iframe.getBoundingClientRect()
+              // Unload/reload items based on viewport distance
+              QQ(list, '.item').forEach(item => {
+                const rect = item.getBoundingClientRect()
                 const tooFarAbove = rect.bottom < -innerHeight * 2
                 const tooFarBelow = rect.top > innerHeight * 3
                 const shouldUnload = tooFarAbove || tooFarBelow
                 
-                if (shouldUnload && iframe.src) {
-                  // Save the original src and height before unloading
-                  if (!iframe.dataset.originalSrc) {
-                    iframe.dataset.originalSrc = iframe.src
-                  }
-                  iframe.style.height = iframe.offsetHeight + 'px'
-                  iframe.removeAttribute('src')
-                } else if (!shouldUnload && !iframe.src && iframe.dataset.originalSrc) {
-                  // Reload iframe when scrolling back into range
-                  iframe.src = iframe.dataset.originalSrc
-                  // Clear fixed height after iframe loads
-                  iframe.addEventListener('load', function clearHeight() {
-                    iframe.style.height = ''
-                    iframe.removeEventListener('load', clearHeight)
-                  }, { once: true })
+                if (shouldUnload && !item.dataset.unloaded) {
+                  // Measure heights before unloading
+                  const itemHeight = rect.height
+                  const firstChild = item.querySelector(':first-child')
+                  const contentHeight = firstChild ? firstChild.getBoundingClientRect().height : itemHeight
+                  
+                  // Save content and labels
+                  const labels = Array.from(item.querySelectorAll('.label')).map(l => l.outerHTML).join('')
+                  item.dataset.unloaded = 'true'
+                  item.dataset.savedContent = item.innerHTML
+                  item.dataset.savedHeight = itemHeight
+                  
+                  // Replace with placeholder that looks like the card (account for padding-top: 1em)
+                  item.style.height = itemHeight + 'px'
+                  item.innerHTML = `<div style="width: 100%; max-width: 100%; height: calc(100% - 1em); margin-top: 1em; border: 1px solid var(--color); display: flex; background: white;"></div>${labels}`
+                } else if (!shouldUnload && item.dataset.unloaded === 'true') {
+                  // Reload content when scrolling back into range
+                  item.innerHTML = item.dataset.savedContent
+                  // Keep height locked permanently to prevent jumping
+                  item.style.height = item.dataset.savedHeight + 'px'
+                  delete item.dataset.unloaded
+                  setupVideoObservers()
+                  // Don't delete savedHeight - keep it locked
                 }
               })
             } catch {} finally {
