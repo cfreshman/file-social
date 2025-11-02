@@ -71,16 +71,6 @@
       // Constants
       const METADATA_PREFIX = '-'
       const COMMENT_PREFIX = '//'
-      
-      {
-        const query_keys = set(',tag', ',')
-        const query = new URLSearchParams(location.search)
-        list(query.keys()).filter(k => !query_keys.has(k) && query.delete(k))
-        const item = query.get('')?.split('?')[0] || ''
-        query.set('', item)
-        const queryString = item ? '?' + decodeURIComponent(query.toString()) : ''
-        url.replace(location.origin + location.pathname + queryString + location.hash)
-      }
   </script>
 
   <div id="floater" class="row gap" style="
@@ -92,7 +82,7 @@
   ">
     <button onclick="
     window['scrollToItem']()
-    ">jump to selected</button>
+    ">selected</button>
     <button onclick="
     setUrlParams({}, { unset: [''] })
     Q('#floater').style.display = 'none'
@@ -218,26 +208,45 @@
         }
       }
 
-      // Normalize URL on load to remove encoding
+      // Normalize URL on load: remove encoding and filter allowed params
       if (location.search) {
+        const allowedKeys = new Set(['', 'tag']) // '' is for post selection
         const currentParams = {}
         const searchString = location.search.slice(1)
-        let needsNormalization = false
+        let needsUpdate = false
         
         searchString.split('&').forEach(pair => {
           const eqIndex = pair.indexOf('=')
           if (eqIndex === -1) {
-            currentParams[pair] = ''
+            const key = pair
+            if (allowedKeys.has(key)) {
+              currentParams[key] = ''
+            } else {
+              needsUpdate = true // filtering out disallowed param
+            }
           } else {
             const key = pair.slice(0, eqIndex)
-            const value = pair.slice(eqIndex + 1)
-            const decoded = decodeURIComponent(value)
-            currentParams[key] = decoded
-            if (decoded !== value) needsNormalization = true
+            if (allowedKeys.has(key)) {
+              const value = pair.slice(eqIndex + 1)
+              const decoded = decodeURIComponent(value)
+              currentParams[key] = decoded
+              if (decoded !== value) needsUpdate = true // needs decoding
+            } else {
+              needsUpdate = true // filtering out disallowed param
+            }
           }
         })
         
-        if (needsNormalization) {
+        // Normalize post param
+        if (currentParams['']) {
+          const cleanedPost = currentParams[''].split('?')[0]
+          if (cleanedPost !== currentParams['']) {
+            currentParams[''] = cleanedPost
+            needsUpdate = true
+          }
+        }
+        
+        if (needsUpdate) {
           const queryString = Object.entries(currentParams)
             .map(([key, value]) => key + (value ? '=' + value : ''))
             .join('&')
@@ -764,7 +773,7 @@
           }
           on(window, 'scroll click', () => handleScroll())
           handleScroll()
-          scrollToItem()
+          requestAnimationFrame(() => requestAnimationFrame(() => scrollToItem()))
 
           // Set up iframe event listeners (for both immediate and lazy-loaded iframes)
           const setupIframeLinks = (frame) => {
