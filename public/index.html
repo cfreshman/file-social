@@ -323,6 +323,7 @@
             const tags = {}
             let backdrop = undefined
             let pins = [[], new Set()]
+            let tagOrder = []
             
             for (const configFile of configFiles) {
               const tagName = configFile.slice(1) // Remove leading '-'
@@ -335,16 +336,18 @@
                 backdrop = content.filter(x => x.trim())[0]
               } else if (tagName === 'pins') {
                 pins = [content, new Set(content)]
+              } else if (tagName === 'order') {
+                tagOrder = content
               } else {
                 // Regular tag
                 tags[tagName] = new Set(content)
               }
             }
             
-            return { files, tags, pins, backdrop }
+            return { files, tags, pins, backdrop, tagOrder }
           })
-        .then(async ({ files, tags, pins, backdrop }) => {
-          console.debug('render file-social', {files, tags, pins, backdrop})
+        .then(async ({ files, tags, pins, backdrop, tagOrder }) => {
+          console.debug('render file-social', {files, tags, pins, backdrop, tagOrder})
           
           // Add dynamic CSS for tag filters
           const style = document.createElement('style')
@@ -408,7 +411,13 @@
           }
           
           // Add list header with filters
-          const tagButtons = Object.keys(tags).map(tagName => `
+          // Sort tags based on order file
+          const tagNames = Object.keys(tags)
+          const orderedTags = tagOrder.length > 0 
+            ? [...tagOrder.filter(t => tagNames.includes(t)), ...tagNames.filter(t => !tagOrder.includes(t))]
+            : tagNames
+          
+          const tagButtons = orderedTags.map(tagName => `
             <button data-tag="${tagName}" onclick="
               const list = Q('#list')
               const btn = event.target

@@ -109,6 +109,19 @@ else
     echo -e "• public/config/-best already exists"
 fi
 
+# -order
+if [ ! -f public/config/-order ]; then
+    cat > public/config/-order << 'EOF'
+// Order of tags (one per line)
+// Tags not listed will appear after these in alphabetical order
+best
+
+EOF
+    echo -e "✓ Created public/config/-order"
+else
+    echo -e "• public/config/-order already exists"
+fi
+
 echo ""
 
 # Update .gitignore for user's own repository

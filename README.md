@@ -38,6 +38,7 @@ Edit these files in `public/config/` (created by `npm run setup`):
 - **`-best`**: Mark posts as featured
 - **`-backdrop`**: Set background image/video URL, or CSS color/gradient
 - **`-(tagname)`**: Add custom filter tags (create new files starting with `-`)
+- **`-order`**: Order your tags (one tag name per line, tags not listed appear after)
 
 ## Deployment
 
