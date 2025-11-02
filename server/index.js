@@ -122,6 +122,22 @@ app.get('/api/posts', async (req, res) => {
   }
 })
 
+// API endpoint to list config/tag files
+app.get('/api/config', async (req, res) => {
+  try {
+    const configPath = join(ROOT, config.publicDir, 'config')
+    const files = await readdir(configPath)
+    
+    // Filter to only files starting with '-'
+    const configFiles = files.filter(f => f.startsWith('-') && !f.endsWith('.gitkeep'))
+    
+    res.json({ files: configFiles })
+  } catch (error) {
+    console.error('Error reading config:', error)
+    res.status(500).json({ error: 'Failed to read config' })
+  }
+})
+
 // Recursively scan posts directory
 async function scanPosts(dir, basePath = '') {
   const posts = []

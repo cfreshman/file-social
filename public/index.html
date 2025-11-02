@@ -73,14 +73,14 @@
       const COMMENT_PREFIX = '//'
       
       {
-      const query_keys = set(',', ',')
-      const query = new URLSearchParams(location.search)
-      list(query.keys()).filter(k => !query_keys.has(k) && query.delete(k))
-      const item = query.get('')?.split('?')[0] || ''
-      query.set('', item)
-      const queryString = item ? '?' + query.toString() : ''
-      url.replace(location.origin + location.pathname + queryString + location.hash)
-    }
+        const query_keys = set(',tag', ',')
+        const query = new URLSearchParams(location.search)
+        list(query.keys()).filter(k => !query_keys.has(k) && query.delete(k))
+        const item = query.get('')?.split('?')[0] || ''
+        query.set('', item)
+        const queryString = item ? '?' + decodeURIComponent(query.toString()) : ''
+        url.replace(location.origin + location.pathname + queryString + location.hash)
+      }
   </script>
 
   <div id="floater" class="row gap" style="
@@ -94,7 +94,7 @@
     window['scrollToItem']()
     ">jump to selected</button>
     <button onclick="
-    url.replace(location.pathname)
+    setUrlParams({}, { unset: [''] })
     Q('#floater').style.display = 'none'
     QQ('.label.hidden').map(x => x.style.display = 'none')
     document.title = '[≋]'
@@ -126,9 +126,17 @@
         display: flex; flex-direction: column;
         width: 100%;
       }
-      #list::before {
+      #list-header {
         order: 0;
-        content: "^PINNED";
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+      }
+      #list-header button.active {
+        opacity: 1;
+        background: black;
+        color: white;
+        border-color: black;
       }
       #list > .item {
         position: relative;
@@ -195,9 +203,6 @@
         position: absolute;
         top: 0; left: 100%; margin: 0 .5em;
       }
-      #list.best-only > .item:not(.best) {
-        display: none;
-      }
     </style>
     <script>
       const has_search = location.search.slice(2)
@@ -213,28 +218,126 @@
         }
       }
 
+      // Normalize URL on load to remove encoding
+      if (location.search) {
+        const currentParams = {}
+        const searchString = location.search.slice(1)
+        let needsNormalization = false
+        
+        searchString.split('&').forEach(pair => {
+          const eqIndex = pair.indexOf('=')
+          if (eqIndex === -1) {
+            currentParams[pair] = ''
+          } else {
+            const key = pair.slice(0, eqIndex)
+            const value = pair.slice(eqIndex + 1)
+            const decoded = decodeURIComponent(value)
+            currentParams[key] = decoded
+            if (decoded !== value) needsNormalization = true
+          }
+        })
+        
+        if (needsNormalization) {
+          const queryString = Object.entries(currentParams)
+            .map(([key, value]) => key + (value ? '=' + value : ''))
+            .join('&')
+          history.replaceState(null, '', location.pathname + (queryString ? '?' + queryString : ''))
+        }
+      }
+
+      // Helper to update URL params without encoding
+      const setUrlParams = window['setUrlParams'] = (params = {}, options = {}) => {
+        const { unsetAll = false, unset = [] } = options
+        
+        // Parse current search and decode values
+        const currentParams = {}
+        const searchString = location.search.slice(1)
+        if (searchString) {
+          searchString.split('&').forEach(pair => {
+            const eqIndex = pair.indexOf('=')
+            if (eqIndex === -1) {
+              currentParams[pair] = ''
+            } else {
+              const key = pair.slice(0, eqIndex)
+              const value = decodeURIComponent(pair.slice(eqIndex + 1))
+              currentParams[key] = value
+            }
+          })
+        }
+        
+        // Build new params
+        const newParams = unsetAll ? {} : { ...currentParams }
+        
+        // Remove specific params
+        unset.forEach(key => delete newParams[key])
+        
+        // Add/update new params
+        Object.entries(params).forEach(([key, value]) => {
+          if (value === null || value === undefined) {
+            delete newParams[key]
+          } else {
+            newParams[key] = value
+          }
+        })
+        
+        // Build query string without encoding
+        const queryString = Object.entries(newParams)
+          .map(([key, value]) => key + (value ? '=' + value : ''))
+          .join('&')
+        
+        url.replace(location.pathname + (queryString ? '?' + queryString : ''))
+      }
+
       {
         const list = Q('#list')
         const item = new URLSearchParams(location.search).get('')?.split('?')[0]
-        Promise.all([
-          fetch('/api/posts')
+        // Fetch all tag files dynamically
+        fetch('/api/posts')
           .then(res => res.json())
-          .then(data => data.posts.map(p => p.path)),
-          fetch('/config/-pins')
-          .then(res => res.text())
-          .then(text => (x => [x, new Set(x)])(text.split('\n').filter(x => x && !x.startsWith(COMMENT_PREFIX))))
-          .catch(e => undefined),
-          fetch('/config/-best')
-          .then(res => res.text())
-          .then(text => (x => [x, new Set(x)])(text.split('\n').filter(x => x && !x.startsWith(COMMENT_PREFIX))))
-          .catch(e => undefined),
-          fetch('/config/-backdrop')
-          .then(res => res.text())
-          .then(text => text.split('\n').filter(x => x && !x.startsWith(COMMENT_PREFIX) && x.trim())[0])
-          .catch(e => undefined),
-        ])
-        .then(async ([files, pins=[[], new Set()], best=[[], new Set()], backdrop]) => {
-          console.debug('render file-social', {files, pins, best, backdrop})
+          .then(async data => {
+            const files = data.posts.map(p => p.path)
+            
+            // Fetch all config files
+            const configFiles = await fetch('/api/config')
+              .then(res => res.json())
+              .then(data => data.files)
+              .catch(e => [])
+            
+            // Fetch each tag file
+            const tags = {}
+            let backdrop = undefined
+            let pins = [[], new Set()]
+            
+            for (const configFile of configFiles) {
+              const tagName = configFile.slice(1) // Remove leading '-'
+              const content = await fetch(`/config/${configFile}`)
+                .then(res => res.text())
+                .then(text => text.split('\n').filter(x => x && !x.startsWith(COMMENT_PREFIX)))
+                .catch(e => [])
+              
+              if (tagName === 'backdrop') {
+                backdrop = content.filter(x => x.trim())[0]
+              } else if (tagName === 'pins') {
+                pins = [content, new Set(content)]
+              } else {
+                // Regular tag
+                tags[tagName] = new Set(content)
+              }
+            }
+            
+            return { files, tags, pins, backdrop }
+          })
+        .then(async ({ files, tags, pins, backdrop }) => {
+          console.debug('render file-social', {files, tags, pins, backdrop})
+          
+          // Add dynamic CSS for tag filters
+          const style = document.createElement('style')
+          style.textContent = Object.keys(tags).map(tagName => `
+            #list.filter-${tagName} > .item:not(.tag-${tagName}):not(.pinned) {
+              display: none;
+            }
+          `).join('\n')
+          document.head.appendChild(style)
           
           // Set backdrop if provided
           if (backdrop) {
@@ -288,6 +391,37 @@
             </div>
           </div>`
           }
+          
+          // Add list header with filters
+          const tagButtons = Object.keys(tags).map(tagName => `
+            <button data-tag="${tagName}" onclick="
+              const list = Q('#list')
+              const btn = event.target
+              const tag = btn.dataset.tag
+              const filterClass = 'filter-' + tag
+              
+              if (btn.classList.contains('active')) {
+                // Unclick - remove filter
+                btn.classList.remove('active')
+                list.classList.remove(filterClass)
+                setUrlParams({}, { unset: ['tag'] })
+              } else {
+                // Click - add filter
+                QQ('#list-header button').forEach(b => b.classList.remove('active'))
+                list.className = ''
+                btn.classList.add('active')
+                list.classList.add(filterClass)
+                setUrlParams({ tag })
+              }
+            ">${tagName.toUpperCase()}</button>
+          `).join('')
+          
+          list.innerHTML = `
+            <div id="list-header">
+              <span>^PINNED</span>
+              ${tagButtons}
+            </div>
+          `
           
           list.innerHTML += files
             .filter(file => !file.startsWith(METADATA_PREFIX))
@@ -389,8 +523,15 @@
 
               const id = `item-${encoded.split('.')[0].replace(/\//g, '-')}`
               const pinned = pins[1].has(name)
-              const is_best = best[1].has(name)||pins[1].has(name)
-              is_best && log({name,is_best,pinned})
+              
+              // Check all tags for this item
+              const itemTags = Object.keys(tags).filter(tagName => tags[tagName].has(name))
+              const tagClasses = [
+                ...itemTags.map(t => `tag-${t}`),
+                pinned ? 'pinned' : ''
+              ].filter(Boolean).join(' ')
+              
+              itemTags.length && log({name, tags: itemTags, pinned})
               let load_on_scroll_into_view
               
               // Handle object return (text files and .url files with lazy loader)
@@ -419,7 +560,7 @@
               }
               
               return `
-            <div class="item ${is_best?'best':''}" id="${id}" style="
+            <div class="item ${tagClasses}" id="${id}" style="
             order: ${pinned ? -(pins[0].length - pins[0].indexOf(encoded)) : i};
             ${pinned ? `
             margin-top: calc(-1em - 1px) !important;
@@ -449,14 +590,32 @@
                 "><a target="_blank" href="${location.origin}/posts/${name}">new tab ↗</a></div>`
               }
               <div class="label">${
-                `<a href="?=${encoded}" onclick="
+                `<a href="#" data-post="${encoded}" onclick="
                 const e = event
                 const { currentTarget:l } = e
                 if (!e.metaKey) {
                   e.preventDefault()
-                  const currentSearch = location.search || '?='
-                  const show_new_tab = !l.href.endsWith(currentSearch)
-                  url.replace(show_new_tab ? l.href : location.pathname)
+                  
+                  // Parse current params
+                  const currentParams = {}
+                  const searchString = location.search.slice(1)
+                  if (searchString) {
+                    searchString.split('&').forEach(pair => {
+                      const [key, ...valueParts] = pair.split('=')
+                      currentParams[key] = valueParts.join('=') || ''
+                    })
+                  }
+                  
+                  const currentPost = currentParams[''] || ''
+                  const clickedPost = l.dataset.post
+                  const show_new_tab = currentPost !== clickedPost
+                  
+                  if (show_new_tab) {
+                    setUrlParams({ '': clickedPost })
+                  } else {
+                    setUrlParams({}, { unset: [''] })
+                  }
+                  
                   let item = l
                   while (item && !item.classList?.contains('item')) {
                     item = item.parentNode
@@ -508,6 +667,31 @@
           
           // Initial setup
           setupVideoObservers()
+
+          // Apply tag filter from URL if present
+          const currentParams = {}
+          const searchString = location.search.slice(1)
+          if (searchString) {
+            searchString.split('&').forEach(pair => {
+              const eqIndex = pair.indexOf('=')
+              if (eqIndex === -1) {
+                currentParams[pair] = ''
+              } else {
+                const key = pair.slice(0, eqIndex)
+                const value = pair.slice(eqIndex + 1)
+                currentParams[key] = value
+              }
+            })
+          }
+          
+          const tagFromUrl = currentParams['tag']
+          if (tagFromUrl && tags[tagFromUrl]) {
+            const btn = Q(`#list-header button[data-tag="${tagFromUrl}"]`)
+            if (btn) {
+              btn.classList.add('active')
+              list.classList.add(`filter-${tagFromUrl}`)
+            }
+          }
 
           let unloaded = QQ(list, '.item:has(.render-target)')
           let scroll_in_progress = 0
