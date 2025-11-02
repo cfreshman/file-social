@@ -1,172 +1,72 @@
 # file-social
 
-Self-hosted visual timeline platform. Share any file type in a beautiful feed.
-
-**Recommended editor:** Download [Cursor](https://cursor.sh) to edit your files.
+Self-hosted personal media stream, like html VSCO
 
 ## Requirements
 
-- [Node.js](https://nodejs.org/) (download and install if you don't have it)
-- A terminal app (Mac/Linux: built-in Terminal, Windows: download [Git Bash](https://gitforwindows.org/))
+- [Node.js](https://nodejs.org/)
+- Terminal app (Mac/Linux: built-in Terminal, Windows: [Git Bash](https://gitforwindows.org/))
+- Recommended: [Cursor](https://cursor.sh) for editing files
 
-## Getting Started
+## Local Setup
 
-Open your terminal in this folder and run:
+In your terminal, navigate to the project directory and enter these lines:
 
 ```bash
 npm run setup
-```
-
-This will:
-- Check your system has everything needed
-- Install dependencies
-- Create the directory structure
-- Set up config files
-- Prepare git to track your posts
-
-Then start the server:
-
-```bash
 npm start
 ```
 
-Open http://localhost:7650 in your browser. You should see your timeline!
+Open http://localhost:7650
 
-**To put this online, see the [Deployment](#deployment) section below.**
+## Adding Posts
 
----
-
-## Usage
-
-### Adding Posts
-
-**The easy way:**
 ```bash
 npm run new
 ```
-This creates a new post file for you with the correct structure. It'll tell you where the file is, and you can click it in Cursor to open and edit it.
 
-**Or manually:** Drop any file into the `posts/` folder. Newest files appear at the top.
+This creates a new post file with the correct date prefix. Or drop any file into `posts/`.
 
-**Supported file types:**
-- Text files (.txt)
-- Images (.jpg, .png, .gif, .webp)
-- Videos (.mp4, .webm)  
-- HTML files (for custom content)
-- URL files (.url) - put a URL in the file and it loads the content
+**Posts are displayed in reverse alphabetical order.** It's recommended to use the nesting system with year/month/day folders.
 
-**For HTML posts**, copy this template:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset=utf-8><script src="/lib.js"></script><meta data-hydrate data-style />
-  <title>Your Title</title>
-</head>
-<body>
-  <div data-hydrate data-title></div>
-  <!-- your content here -->
-</body>
-</html>
-```
+**Supported:** .txt, .jpg, .png, .gif, .webp, .mp4, .webm, .html, .url
 
-Or just run `npm run new` and edit the file it creates.
+## Customization
 
-### Keyboard Shortcuts
-
-- **↓ or j**: Next post
-- **↑ or k**: Previous post  
-- **Home**: First post
-- **End**: Last post
-
-### Special Files
-
-Create these files in `public/config/` to customize your timeline:
-
-- **`-pins`**: List post paths (one per line) to pin at the top
-- **`-best`**: Mark posts as featured/best content
-- **`-backdrop`**: Set a background image or video (first line of file)
-
-Example `public/config/-pins`:
-```
-2025/01/02/important.html
-2024/12/25/favorite.html
-```
-
-## Configuration
-
-Open `config.js` in Cursor to change:
-- Port number (default: 7650)
-- App name
-- Where posts are stored
+Edit these files in `public/config/` (created by `npm run setup`):
+- **`-pins`**: Pin posts at top (one path per line: `2025/01/02/post.html`)
+- **`-best`**: Mark posts as featured
+- **`-backdrop`**: Set background image/video URL, or CSS color/gradient
+- **`-(tagname)`**: Add custom filter tags (create new files starting with `-`)
 
 ## Deployment
 
-**Put your timeline online.** All commands run from your computer - no need to log into the server.
+**All commands run from your computer.**
 
-### First Time Setup
+### 1. Get a server
+Rent from [DigitalOcean](https://digitalocean.com) or [Linode](https://linode.com) ($5-10/mo). You'll get an IP address.
 
-**1. Get a server**
-
-Rent a server from [DigitalOcean](https://digitalocean.com), [Linode](https://linode.com), or similar ($5-10/month).
-They'll give you an IP address like `123.45.67.89` - save it.
-
-**2. Give your computer access to the server**
-
-This lets your computer talk to the server automatically.
-
-**Mac/Linux:**
+### 2. Configure & Deploy
 ```bash
-ssh-copy-id root@123.45.67.89
+npm run deploy:configure  # Enter server IP (sets up SSH + installs everything)
+npm run deploy            # Uploads your site
 ```
 
-**Windows (in Git Bash):**
-```bash
-cat ~/.ssh/id_rsa.pub | ssh root@123.45.67.89 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
-```
+Your site is live at `http://YOUR.SERVER.IP:7650` (replace with your actual IP, but keep the `:7650`)
 
-Type your server password when it asks.
-
-**3. Configure**
-```bash
-npm run deploy:configure
-```
-
-Enter your server IP. If you have a domain (like `yourdomain.com`), enter it. Otherwise leave it blank.
-
-**4. Set up the server**
-```bash
-npm run deploy:setup
-```
-
-This installs everything needed on your server (takes a few minutes).
-
-**5. Deploy**
-```bash
-npm run deploy
-```
-
-Done! Your timeline is live at `http://123.45.67.89:7650`
-
-**6. (Optional) Use a domain name**
-
-If you entered a domain in step 3:
-- Go to your domain settings (Cloudflare, Namecheap, etc.)
-- Add an A record pointing to your server IP
-- Wait 5-10 minutes
+### 3. Add domain (optional)
+If you entered a domain in step 2:
+- Point domain's A record to your server IP
+- Wait 5-10 minutes for DNS
 - Run: `npm run deploy:nginx`
 
-Now your site is at `https://yourdomain.com`
+Now at `https://yourdomain.com`
 
----
-
-## 🚀 Daily Usage
-
-After setup, this is the only command you need to remember:
+## Daily Use
 
 ```bash
 npm run deploy
 ```
 
-This syncs all your posts and changes to your server.
+That's it. Syncs everything to your server.
 

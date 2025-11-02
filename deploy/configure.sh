@@ -45,7 +45,38 @@ if [ -n "$DEPLOY_DOMAIN" ]; then
   echo "Domain: $DEPLOY_DOMAIN"
 fi
 echo ""
-echo "Next steps:"
-echo "1. Make sure you can SSH to your server: ssh root@$DEPLOY_HOST"
-echo "2. Run: npm run deploy:setup"
+
+# Set up SSH key
+echo "Setting up SSH access..."
+echo ""
+
+if [ ! -f ~/.ssh/id_rsa.pub ]; then
+  echo "No SSH key found. Generating one..."
+  ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+fi
+
+echo "Copying SSH key to server..."
+echo "(You'll need to enter your server password)"
+echo ""
+
+if command -v ssh-copy-id &> /dev/null; then
+  ssh-copy-id -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST
+else
+  # Fallback for systems without ssh-copy-id
+  cat ~/.ssh/id_rsa.pub | ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+fi
+
+echo ""
+echo "✅ SSH access configured!"
+echo ""
+echo "Setting up server..."
+echo ""
+
+# Run setup script
+./deploy/setup.sh
+
+echo ""
+echo "✅ All done! Your server is ready."
+echo ""
+echo "Next step: npm run deploy"
 
