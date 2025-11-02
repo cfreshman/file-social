@@ -6,6 +6,7 @@
   <script src="/helpers.js"></script>
   <script src="/css.js"></script>
   <script src="/hydrate.js"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <title>[=]</title>
 
   <link rel="icon" href="">
@@ -257,6 +258,33 @@
           }
 
           const renders = {}
+          
+          // Helper to render video with unmute button
+          const renderVideo = (src) => {
+            const videoId = `video-${src.replace(/[^a-zA-Z0-9]/g, '-')}`
+            return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: flex-start;">
+            <div style="position: relative; display: inline-block;">
+              <video id="${videoId}" src="${src}" loop muted playsinline webkit-playsinline autoplay style="max-height: 400px; max-width: 100%; width: auto; height: auto; object-fit: contain; cursor: pointer;" onclick="
+                event.preventDefault();
+                const btn = this.nextElementSibling;
+                this.muted = false;
+                this.controls = true;
+                this.style.cursor = 'default';
+                if (btn) btn.remove();
+              "></video>
+              <button onclick="
+                const video = this.previousElementSibling;
+                video.muted = false;
+                video.controls = true;
+                video.style.cursor = 'default';
+                this.remove();
+              " style="position: absolute; bottom: 1em; right: 1em; background: rgba(0,0,0,0.7); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; padding: 0; pointer-events: auto;">
+                <i class="ph-fill ph-speaker-simple-slash" style="font-size: 22px;"></i>
+              </button>
+            </div>
+          </div>`
+          }
+          
           list.innerHTML += files
             .filter(file => !file.startsWith(METADATA_PREFIX))
             .map(file => {
@@ -268,9 +296,54 @@
               const extension = hasExtension ? file.substring(lastDotIndex) : ''
               const name = hasExtension ? file.substring(0, lastDotIndex) : file
 
+              // Helper to render by extension
+              const renderByExtension = (src, ext) => {
+                switch (ext.toLowerCase()) {
+                  case '.png': case '.jpg': case '.jpeg': case '.gif': case '.webp':
+                    return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: flex-start;"><img src="${src}" style="max-height: 400px; max-width: 100%; width: auto; height: auto; object-fit: contain;" /></div>`
+                  case '.mp4': case '.webm':
+                    return renderVideo(src)
+                  case '.html': case '.htm':
+                    return `<iframe src="${src}" onload="
+                    const L = event.target
+                    let prev_height = undefined
+                    const resize = () => {
+                      L.height = L.contentWindow.document.documentElement.scrollHeight / 2
+                      L.height = L.contentWindow.document.documentElement.scrollHeight + 8 + 16
+                      const changed = L.height !== prev_height
+                      prev_height = L.height
+                      return changed
+                    }
+                    const resize_loop = () => {
+                      if (resize()) resize_loop()
+                      else setTimeout(() => requestAnimationFrame(resize_loop), 1_000)
+                    }
+                    requestAnimationFrame(() => requestAnimationFrame(resize_loop))
+
+                    if ('${file}' === location.search.slice(2)) {
+                      window['scrollToItem']()
+                    }
+
+                    try {
+                      if (L.src === L.contentWindow.window.location.href && ${ext === '.href.txt'}) {
+                        L.contentWindow.window.location.href = L.contentWindow.window.document.body.textContent
+                      } else if (!L.contentWindow.window.location.pathname.includes('/raw')) {
+                        defer(() => {
+                          L.style.minHeight = 0
+                          L.style.minHeight = \`max(100px, \${(L.contentWindow.window.document.body.querySelector('.body')?.scrollHeight||0)+'px'});\`
+                        }, 1_000)
+                      }
+                    } catch {}
+                    "></iframe>`
+                  default:
+                    // Unknown extension for URL content - try as iframe
+                    return `<div style="background: white; min-height: 15em;"><iframe src="${src}" style="width: 100%; height: 500px; border: none;"></iframe></div>`
+                }
+              }
+
               switch (extension.toLowerCase()) {
                 case '.url':
-                  // Load URL from file and determine how to render it
+                  // Load URL from file and render based on URL's extension
                   const urlContentId = `url-content-${name.replace(/[^a-zA-Z0-9]/g, '-')}`
                   return {
                     id: urlContentId,
@@ -278,83 +351,13 @@
                       const response = await fetch(path)
                       const url = (await response.text()).trim()
                       const urlExt = url.substring(url.lastIndexOf('.')).toLowerCase().split('?')[0]
-                      
-                      if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(urlExt)) {
-                        return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: flex-start;"><img src="${url}" style="max-height: 400px; max-width: 100%; width: auto; height: auto; object-fit: contain;" /></div>`
-                      } else if (['.mp4', '.webm'].includes(urlExt)) {
-                        return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: flex-start;"><video src="${url}" controls loop muted autoplay style="max-height: 400px; max-width: 100%; width: auto; height: auto; object-fit: contain;"></video></div>`
-                      } else {
-                        // Treat as HTML content - use same rendering as .html files
-                        return `<div style="background: white; min-height: 15em;"><iframe src="${url}" style="width: 100%; height: 500px; border: none;" onload="
-                        const L = event.target
-                        let prev_height = undefined
-                        const resize = () => {
-                          try {
-                            L.height = L.contentWindow.document.documentElement.scrollHeight / 2
-                            L.height = L.contentWindow.document.documentElement.scrollHeight + 8 + 16
-                          } catch(e) {
-                            // Cross-origin iframe, can't resize. Keep default height.
-                            return false
-                          }
-                          const changed = L.height !== prev_height
-                          prev_height = L.height
-                          return changed
-                        }
-                        const resize_loop = () => {
-                          if (resize()) resize_loop()
-                          else setTimeout(() => requestAnimationFrame(resize_loop), 1_000)
-                        }
-                        resize_loop()
-
-                        try {
-                          if (!L.contentWindow.window.location.pathname.includes('/raw')) {
-                            defer(() => {
-                              L.style.minHeight = 0
-                              L.style.minHeight = \`max(100px, \${(L.contentWindow.window.document.body.querySelector('.body')?.scrollHeight||0)+'px'});\`
-                            }, 1_000)
-                          }
-                        } catch {}
-                        "></iframe></div>`
-                      }
+                      return renderByExtension(url, urlExt)
                     }
                   }
                 case '.png': case '.jpg': case '.jpeg': case '.gif': case '.webp':
-                  return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: flex-start;"><img src="${path}" style="max-height: 400px; max-width: 100%; width: auto; height: auto; object-fit: contain;" /></div>`
                 case '.mp4': case '.webm':
-                  return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: flex-start;"><video src="${path}" controls loop muted autoplay style="max-height: 400px; max-width: 100%; width: auto; height: auto; object-fit: contain;"></video></div>`
                 case '.html': case '.htm': case '.href.txt': case '.txt': case '.md': 
-                  return `<iframe src="${path}" onload="
-                  const L = event.target
-                  let prev_height = undefined
-                  const resize = () => {
-                    L.height = L.contentWindow.document.documentElement.scrollHeight / 2
-                    L.height = L.contentWindow.document.documentElement.scrollHeight + 8 + 16
-                    const changed = L.height !== prev_height
-                    prev_height = L.height
-                    return changed
-                  }
-                  const resize_loop = () => {
-                    if (resize()) resize_loop()
-                    else setTimeout(() => requestAnimationFrame(resize_loop), 1_000)
-                  }
-                  requestAnimationFrame(() => requestAnimationFrame(resize_loop))
-
-                  if ('${file}' === location.search.slice(2)) {
-                    window['scrollToItem']()
-                  }
-
-                  try {
-                    if (L.src === L.contentWindow.window.location.href && ${extension === '.href.txt'}) {
-                      L.contentWindow.window.location.href = L.contentWindow.window.document.body.textContent
-                    } else if (!L.contentWindow.window.location.pathname.includes('/raw')) {
-                      defer(() => {
-                        L.style.minHeight = 0
-                        L.style.minHeight = \`max(100px, \${(L.contentWindow.window.document.body.querySelector('.body')?.scrollHeight||0)+'px'});\`
-                      }, 1_000)
-                    }
-                    
-                  } catch {}
-                  "></iframe>`
+                  return renderByExtension(path, extension)
                 default:
                   // For unknown file types, load as text
                   const contentId = `content-${name.replace(/[^a-zA-Z0-9]/g, '-')}`
@@ -482,6 +485,26 @@
             })
             .join('\n')
 
+          // Set up IntersectionObserver for video autoplay (fallback for mobile)
+          const setupVideoObservers = () => {
+            const videos = QQ(list, 'video[id^="video-"]')
+            const videoObserver = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                const video = entry.target
+                if (entry.isIntersecting) {
+                  video.play().catch(() => {})
+                } else {
+                  video.pause()
+                }
+              })
+            }, { threshold: 0.5 })
+            
+            videos.forEach(video => videoObserver.observe(video))
+          }
+          
+          // Initial setup
+          setupVideoObservers()
+
           let unloaded = QQ(list, '.item:has(.render-target)')
           let scroll_in_progress = 0
           let user_scroll = false
@@ -504,13 +527,16 @@
                     if (typeof renderData === 'object' && renderData.html) {
                       render_target.outerHTML = renderData.html
                       renderData.load()
+                      setupVideoObservers()
                     } else if (typeof renderData === 'object' && renderData.fetcher) {
                       // Handle .url files with async fetcher
                       renderData.fetcher().then(html => {
                         render_target.outerHTML = html
+                        setupVideoObservers()
                       })
                     } else {
                       render_target.outerHTML = renderData
+                      setupVideoObservers()
                     }
                   } catch {}
                   delete renders[l.id]
