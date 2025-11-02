@@ -1,0 +1,23 @@
+{
+  "name": "file-social",
+  "version": "1.0.0",
+  "description": "Self-hosted visual timeline platform",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "new": "node scripts/new-post.js",
+    "deploy": "./deploy/deploy.sh",
+    "deploy:configure": "./deploy/configure.sh",
+    "deploy:setup": "./deploy/setup.sh",
+    "deploy:nginx": "./deploy/nginx.sh"
+  },
+  "keywords": ["timeline", "media", "self-hosted"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+

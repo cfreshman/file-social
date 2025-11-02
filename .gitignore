@@ -1,0 +1,17 @@
+node_modules/
+posts/*
+!posts/.gitkeep
+!posts/2025/
+posts/2025/*
+!posts/2025/11/
+posts/2025/11/*
+!posts/2025/11/01/
+posts/2025/11/01/*
+!posts/2025/11/01/0.html
+public/config/*
+!public/config/.gitkeep
+.env
+*.log
+.DS_Store
+deploy/config.sh
+
