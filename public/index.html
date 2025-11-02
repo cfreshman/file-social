@@ -148,7 +148,7 @@
         white-space: pre-wrap;
         background: white;
         color: black;
-        padding: .5em 1em;
+        padding: .5em;
         padding-bottom: 2.5em;
         font-size: .8em;
       }
@@ -517,14 +517,15 @@
                   return `<div class='content'>Error loading URL file</div>`
                 case '.png': case '.jpg': case '.jpeg': case '.gif': case '.webp':
                 case '.mp4': case '.webm':
-                case '.html': case '.htm': case '.href.txt': case '.txt': case '.md': 
+                case '.html': case '.htm': case '.href.txt':
                   return renderByExtension(path, extension)
+                case '.txt': case '.md':
                 default:
-                  // For unknown file types, load as text
+                  // For text files, render directly as text content
                   const contentId = `content-${name.replace(/[^a-zA-Z0-9]/g, '-')}`
                   // Store fetcher for lazy loading
                   return {
-                    html: `<div class='content' id="${contentId}" style="white-space: pre-wrap;">[loading...]</div>`,
+                    html: `<div class='content' id="${contentId}">[loading...]</div>`,
                     load: async () => {
                       try {
                         const res = await fetch(path)
