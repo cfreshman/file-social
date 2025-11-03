@@ -8,6 +8,9 @@ posts/2025/11/*
 !posts/2025/11/01/
 posts/2025/11/01/*
 !posts/2025/11/01/0.html
+!posts/2025/11/02/
+posts/2025/11/02/*
+!posts/2025/11/02/0.url
 public/config/*
 !public/config/.gitkeep
 public/data/*
