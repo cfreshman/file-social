@@ -482,7 +482,7 @@
                   case '.mp4': case '.webm':
                     return renderVideo(src)
                   case '.html': case '.htm':
-                    return `<iframe src="${src}" onload="
+                    return `<iframe src="${src}" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms" onload="
                     const L = event.target
                     let prev_height = undefined
                     const resize = () => {
@@ -505,7 +505,7 @@
                     "></iframe>`
                   default:
                     // Unknown extension for URL content - try as iframe
-                    return `<div style="background: white; min-height: 15em;"><iframe src="${src}" style="width: 100%; height: 500px; border: none;"></iframe></div>`
+                    return `<div style="background: white; min-height: 15em;"><iframe src="${src}" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms" style="width: 100%; height: 500px; border: none;"></iframe></div>`
                 }
               }
 
