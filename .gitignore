@@ -1,4 +1,5 @@
 node_modules/
+data/
 posts/*
 !posts/.gitkeep
 !posts/2025/
@@ -11,6 +12,9 @@ posts/2025/11/01/*
 !posts/2025/11/02/
 posts/2025/11/02/*
 !posts/2025/11/02/0.url
+!posts/2025/11/06/
+posts/2025/11/06/*
+!posts/2025/11/06/1.html
 public/config/*
 !public/config/.gitkeep
 public/data/*

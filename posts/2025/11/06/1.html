@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8><script src="/lib.js"></script><meta data-hydrate data-style />
+  <title>_01</title><meta name=description content="" />
+  <style>
+    /* standard styles for file-social */
+    img, video, iframe {
+      max-width: 100%;
+      max-height: 400px;
+      flex-shrink: 1;
+      object-fit: contain;
+      object-position: left;
+      image-rendering: pixelated;
+    }
+    iframe {
+      max-height: 800px;
+    }
+
+    :root {
+      --border: #0003;
+    }
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+
+  <script src="/scripts/_01.js"></script>
+
+  <div data-hydrate data-title></div>
+  <br />
+  <div>a new simple data persistence library for file-social</div>
+  <br />
+  
+  <div style="padding: 1em; border-radius: .5em; background: #ddeeff; border: 1px solid var(--border);">
+    <div style="margin-bottom: 1em;">
+      <div style="font-weight: bold; margin-bottom: .5em;">how it works</div>
+      <div>- the library exposes <b>store.data</b></div>
+      <div>- set JSON-friendly objects on it!</div>
+      <div>- for example, <b>store.data.words = ['hello', 'world']</b></div>
+      <div>- changes auto-save</div>
+      <div style="margin-top: .5em; opacity: 0.7;">remember:</div>
+      <div style="opacity: 0.7;">client-side = localStorage (per-browser)</div>
+      <div style="opacity: 0.7;">server-side = files (shared across devices)</div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div style="margin-top: 1em;">
+      <div style="font-weight: bold; margin-bottom: .5em;">client example</div>
+      <input type="text" placeholder="type and hit enter" onkeydown="
+        if (event.key === 'Enter') { 
+          clientStore.data.words.push(event.target.value); 
+          event.target.value = ''; 
+          renderWords();
+        }
+      " />
+      <div style="margin-top: .5em;">
+        your words (<a href="javascript:void(0)" onclick="clientStore.data.words = []; renderWords()">clear</a>)
+      </div>
+      <div id="words" style="
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+        margin-top: .5em;
+      "></div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div style="margin-top: 1em;">
+      <div style="font-weight: bold; margin-bottom: .5em;">server example</div>
+      <button onclick="increment()">count: <span id="countValue">loading...</span></button>
+      <div style="margin-top: .5em; opacity: 0.7; font-size: .9em;">
+        this counter is shared across all browsers/devices
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="margin-top: 1em;">
+      <div style="font-weight: bold; margin-bottom: .5em;">how to get started</div>
+      <div>- review how this post and server/index.js use <b>_01</b></div>
+      <div>- then adapt for your own use case!</div>
+    </div>
+  </div>
+
+  <script>
+    // Client-side example
+    const clientStore = window.clientStore = _01('demo')
+    clientStore.data.words = clientStore.data.words || []
+    
+    const renderWords = () => {
+      document.getElementById('words').innerHTML = clientStore.data.words
+        .map(word => `<pre>- ${word}</pre>`)
+        .join('')
+    }
+    renderWords()
+    
+    // Server-side example
+    const loadCount = async () => {
+      try {
+        const res = await fetch('/api/counter')
+        const data = await res.json()
+        document.getElementById('countValue').textContent = data.count
+      } catch (e) {
+        document.getElementById('countValue').textContent = 'error'
+      }
+    }
+    
+    const increment = async () => {
+      try {
+        const res = await fetch('/api/counter', { method: 'POST' })
+        const data = await res.json()
+        document.getElementById('countValue').textContent = data.count
+      } catch (e) {
+        document.getElementById('countValue').textContent = 'error'
+      }
+    }
+    
+    loadCount()
+  </script>
+
+</body>
+</html>

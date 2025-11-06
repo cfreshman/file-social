@@ -498,7 +498,7 @@
                       return changed
                     }
                     setTimeout(() => resize(), 100)
-                    setTimeout(() => resize(), 1_000)
+                    setInterval(() => resize(), 1_000)
                     "></iframe>`
                   default:
                     // Unknown extension for URL content - try as iframe

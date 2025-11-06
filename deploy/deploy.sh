@@ -30,6 +30,7 @@ rsync -avz --delete \
   --exclude '.DS_Store' \
   --exclude '*.log' \
   --exclude 'deploy/config.sh' \
+  --exclude 'data' \
   ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
 
 # Run remote commands

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import { existsSync } from 'fs'
 import config from '../config.js'
+import _01 from './_01.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -164,6 +165,20 @@ async function scanPosts(dir, basePath = '') {
   
   return posts
 }
+
+// Example stateful route using _01
+const store = _01(join(ROOT, 'data/counter'))
+store.data.count = store.data.count || 0
+
+app.get('/api/counter', (req, res) => {
+  res.json({ count: store.data.count })
+})
+
+app.post('/api/counter', async (req, res) => {
+  store.data.count++
+  await store.save()
+  res.json({ count: store.data.count })
+})
 
 app.listen(config.port, () => {
   console.log(`${config.name} running on http://localhost:${config.port}`)
