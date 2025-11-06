@@ -497,11 +497,8 @@
                       prev_height = height
                       return changed
                     }
-                    const resize_loop = () => {
-                      if (resize()) resize_loop()
-                      else setTimeout(() => requestAnimationFrame(resize_loop), 1_000)
-                    }
-                    requestAnimationFrame(() => requestAnimationFrame(resize_loop))
+                    setTimeout(() => resize(), 100)
+                    setTimeout(() => resize(), 1_000)
                     "></iframe>`
                   default:
                     // Unknown extension for URL content - try as iframe
@@ -744,7 +741,7 @@
               // Load items coming into view
               unloaded = unloaded.slice().reverse().filter(l => {
                 const rect = l.getBoundingClientRect()
-                if (force || (0 <= rect.y + rect.height + innerHeight && rect.y - innerHeight <= innerHeight)) {
+                if (force || (rect.y < innerHeight * 2 && rect.y > -innerHeight * 2)) {
                   const render_target = Q(l, '.render-target')
                   const renderData = renders[l.id]
                   
@@ -786,13 +783,13 @@
                   item.dataset.savedHeight = itemHeight
                   
                   // Replace with placeholder that looks like the card (account for padding-top: 1em)
-                  item.style.height = itemHeight + 'px'
+                  item.style.minHeight = itemHeight + 'px'
                   item.innerHTML = `<div style="width: 100%; max-width: 100%; height: calc(100% - 1em); margin-top: 1em; border: 1px solid var(--color); display: flex; background: white;"></div>${labels}`
                 } else if (!shouldUnload && item.dataset.unloaded === 'true') {
                   // Reload content when scrolling back into range
                   item.innerHTML = item.dataset.savedContent
                   // Keep height locked permanently to prevent jumping
-                  item.style.height = item.dataset.savedHeight + 'px'
+                  item.style.minHeight = item.dataset.savedHeight + 'px'
                   delete item.dataset.unloaded
                   setupVideoObservers()
                   // Don't delete savedHeight - keep it locked
