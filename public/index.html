@@ -487,10 +487,10 @@
                     let prev_height = undefined
                     const resize = () => {
                       L.height = 400
-                      L.height = L.contentWindow.document.documentElement.scrollHeight + 24
+                      L.height = L.contentWindow.document.documentElement.scrollHeight + 20
                       const min400 = L.height
                       L.height = 0
-                      L.height = L.contentWindow.document.documentElement.scrollHeight + 24
+                      L.height = L.contentWindow.document.documentElement.scrollHeight + 20
                       const min0 = L.height
                       const height = min0 === 0 ? min400 : min0
                       const changed = height !== prev_height
