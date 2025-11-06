@@ -9,10 +9,13 @@
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "new": "node scripts/new-post.js",
-    "deploy": "./deploy/deploy.sh",
-    "deploy:configure": "./deploy/configure.sh",
-    "deploy:setup": "./deploy/setup.sh",
-    "deploy:nginx": "./deploy/nginx.sh"
+    "deploy": "./deploy/ubuntu-24/deploy.sh",
+    "deploy:configure": "./deploy/ubuntu-24/configure.sh",
+    "deploy:setup": "./deploy/ubuntu-24/setup.sh",
+    "deploy:nginx": "./deploy/ubuntu-24/nginx.sh",
+    "pi:deploy": "./deploy/pi-trixie/deploy.sh",
+    "pi:configure": "./deploy/pi-trixie/configure.sh",
+    "pi:setup": "./deploy/pi-trixie/setup.sh"
   },
   "keywords": ["timeline", "media", "self-hosted"],
   "author": "",

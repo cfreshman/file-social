@@ -1,4 +1,5 @@
 node_modules/
+_01/
 public/config/*
 !public/config/.gitkeep
 .env

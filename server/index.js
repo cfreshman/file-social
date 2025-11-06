@@ -167,7 +167,7 @@ async function scanPosts(dir, basePath = '') {
 }
 
 // Example stateful route using _01
-const store = _01(join(ROOT, 'data/counter'))
+const store = _01(join(ROOT, '_01/counter'))
 store.data.count = store.data.count || 0
 
 app.get('/api/counter', (req, res) => {

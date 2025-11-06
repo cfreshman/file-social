@@ -4,7 +4,7 @@
 
 set -e
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 # Load config
 if [ ! -f "deploy/config.sh" ]; then
@@ -17,7 +17,7 @@ source deploy/config.sh
 
 # Validate config
 if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
-  echo "Error: DEPLOY_HOST and DEPLOY_USER must be set in deploy/config.sh"
+  echo "Error: DEPLOY_HOST and DEPLOY_USER must be set in config.sh"
   exit 1
 fi
 
@@ -51,7 +51,6 @@ ssh "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
   ufw allow 22/tcp
   ufw allow 80/tcp
   ufw allow 443/tcp
-  ufw allow 7650/tcp
   ufw --force enable
   
   echo "📁 Creating app directory..."

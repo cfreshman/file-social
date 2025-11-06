@@ -62,6 +62,10 @@ echo -e "✓ Created public/config/ directory"
 mkdir -p public/data
 echo -e "✓ Created public/data/ directory"
 
+# Create _01 directory for server-side persistence
+mkdir -p _01
+echo -e "✓ Created _01/ directory"
+
 echo ""
 
 # Create default config files if they don't exist

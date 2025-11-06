@@ -3,7 +3,7 @@
 
 set -e
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 # Load config
 if [ ! -f "deploy/config.sh" ]; then
@@ -14,7 +14,7 @@ fi
 source deploy/config.sh
 
 if [ -z "$DEPLOY_DOMAIN" ]; then
-  echo "Error: DEPLOY_DOMAIN must be set in deploy/config.sh"
+  echo "Error: DEPLOY_DOMAIN must be set in config.sh"
   exit 1
 fi
 

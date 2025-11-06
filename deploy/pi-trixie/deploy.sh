@@ -3,7 +3,7 @@
 
 set -e
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 # Load config
 if [ ! -f "deploy/config.sh" ]; then
@@ -16,9 +16,12 @@ source deploy/config.sh
 
 # Validate config
 if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ] || [ -z "$DEPLOY_PATH" ]; then
-  echo "Error: DEPLOY_HOST, DEPLOY_USER, and DEPLOY_PATH must be set in deploy/config.sh"
+  echo "Error: DEPLOY_HOST, DEPLOY_USER, and DEPLOY_PATH must be set in config.sh"
   exit 1
 fi
+
+# Default to port 7650 if not set
+SERVER_PORT=${SERVER_PORT:-7650}
 
 echo "🚀 Deploying file-social to $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
 
@@ -30,30 +33,32 @@ rsync -avz --delete \
   --exclude '.DS_Store' \
   --exclude '*.log' \
   --exclude 'deploy/config.sh' \
-  --exclude 'data' \
+  --exclude '_01' \
   ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
 
 # Run remote commands
 echo "📥 Installing dependencies..."
-ssh "$DEPLOY_USER@$DEPLOY_HOST" << EOF
+ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$DEPLOY_PATH" "$SERVER_PORT" << 'EOF'
+  DEPLOY_PATH=$1
+  SERVER_PORT=$2
   cd $DEPLOY_PATH
   npm install --production
   
   # Install PM2 if not already installed
   if ! command -v pm2 &> /dev/null; then
     echo "Installing PM2..."
-    npm install -g pm2
+    sudo npm install -g pm2
   fi
   
   # Restart or start the app
   if pm2 list | grep -q file-social; then
     echo "♻️  Restarting file-social..."
-    pm2 restart file-social
+    PORT=$SERVER_PORT pm2 restart file-social --update-env
   else
-    echo "▶️  Starting file-social..."
-    pm2 start server/index.js --name file-social
+    echo "▶️  Starting file-social on port $SERVER_PORT..."
+    PORT=$SERVER_PORT pm2 start server/index.js --name file-social
     pm2 save
-    pm2 startup systemd -u root --hp /root
+    pm2 startup systemd -u $USER --hp $HOME
   fi
   
   pm2 list
@@ -62,11 +67,6 @@ EOF
 echo ""
 echo "✅ Deployment complete!"
 echo ""
-echo "Your app is running at:"
-if [ -n "$DEPLOY_DOMAIN" ]; then
-  echo "  http://$DEPLOY_HOST:7650 (setup nginx for https://$DEPLOY_DOMAIN)"
-else
-  echo "  http://$DEPLOY_HOST:7650"
-fi
+echo "Your app is running at: http://$DEPLOY_HOST:$SERVER_PORT"
 echo ""
-echo "To set up nginx with your domain, run: npm run deploy:nginx"
+echo "Configure your external reverse proxy to forward to this address."

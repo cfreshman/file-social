@@ -1,23 +1,26 @@
 #!/bin/bash
-# Interactive configuration script for file-social deployment
+# Interactive configuration script for file-social deployment (Raspberry Pi)
 
 set -e
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
-echo "📝 Let's configure your file-social deployment!"
+echo "📝 Let's configure your Raspberry Pi deployment!"
 echo ""
 
-# Get server IP
+# Get username
+read -p "Enter your Pi username (default: pi): " DEPLOY_USER
+DEPLOY_USER=${DEPLOY_USER:-pi}
+
+# Get server IP or hostname
 while [ -z "$DEPLOY_HOST" ]; do
-  read -p "Enter your server IP address: " DEPLOY_HOST
+  read -p "Enter your Pi IP address or hostname (e.g., raspberrypi.local): " DEPLOY_HOST
 done
 
-# Get domain (optional)
-read -p "Enter your domain name (optional, press Enter to skip): " DEPLOY_DOMAIN
+# Get server port
+read -p "Enter Node.js server port (default: 7650): " SERVER_PORT
+SERVER_PORT=${SERVER_PORT:-7650}
 
-# Use root by default
-DEPLOY_USER="root"
 DEPLOY_PATH="/var/www/file-social"
 
 # Create config file
@@ -31,8 +34,8 @@ DEPLOY_USER="$DEPLOY_USER"
 DEPLOY_HOST="$DEPLOY_HOST"
 DEPLOY_PATH="$DEPLOY_PATH"
 
-# Domain name (optional)
-DEPLOY_DOMAIN="$DEPLOY_DOMAIN"
+# Server port
+SERVER_PORT="$SERVER_PORT"
 EOF
 
 chmod +x deploy/config.sh
@@ -40,10 +43,8 @@ chmod +x deploy/config.sh
 echo ""
 echo "✅ Configuration saved!"
 echo ""
-echo "Server IP: $DEPLOY_HOST"
-if [ -n "$DEPLOY_DOMAIN" ]; then
-  echo "Domain: $DEPLOY_DOMAIN"
-fi
+echo "Pi address: $DEPLOY_HOST"
+echo "Server port: $SERVER_PORT"
 echo ""
 
 # Set up SSH key
@@ -73,10 +74,10 @@ echo "Setting up server..."
 echo ""
 
 # Run setup script
-./deploy/setup.sh
+./deploy/pi-trixie/setup.sh
 
 echo ""
 echo "✅ All done! Your server is ready."
 echo ""
-echo "Next step: npm run deploy"
+echo "Next step: npm run pi:deploy"
 

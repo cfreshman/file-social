@@ -1,5 +1,6 @@
 node_modules/
 data/
+_01/
 posts/*
 !posts/.gitkeep
 !posts/2025/
