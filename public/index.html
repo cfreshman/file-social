@@ -437,6 +437,16 @@
                 list.classList.add(filterClass)
                 setUrlParams({ tag })
               }
+              
+              // Trigger lazy loading for newly visible items after layout updates
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  // Force immediate load by clearing throttle state
+                  window.scroll_timeout = null
+                  window.scroll_in_progress = false
+                  if (window.handleScroll) window.handleScroll()
+                })
+              })
             ">${tagName}</button>
           `).join('')
           
@@ -725,79 +735,96 @@
             if (btn) {
               btn.classList.add('active')
               list.classList.add(`filter-${tagFromUrl}`)
+              // Trigger lazy loading after filter is applied
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  window.scroll_timeout = null
+                  window.scroll_in_progress = false
+                  handleScroll()
+                })
+              })
             }
           }
 
-          let unloaded = QQ(list, '.item:has(.render-target)')
-          let scroll_in_progress = 0
+          let scroll_in_progress = false
+          let scroll_timeout = null
           let user_scroll = false
           let start_ms = performance.now()
-          const handleScroll = window['handleScroll'] = (force=false) => {
-            if (scroll_in_progress) return
+          
+          // Expose to window for tag button access
+          window.scroll_timeout = null
+          window.scroll_in_progress = false
+          
+          const handleScroll = window['handleScroll'] = () => {
+            if (window.scroll_in_progress) return
             if (performance.now() - start_ms > 250) user_scroll = true
+            
+            // Throttle scroll handling
+            if (window.scroll_timeout) return
+            window.scroll_timeout = setTimeout(() => window.scroll_timeout = null, 100)
+            
+            window.scroll_in_progress = true
+            requestAnimationFrame(() => {
             try {
-              scroll_in_progress = 1
               
-              // Load items coming into view
-              unloaded = unloaded.slice().reverse().filter(l => {
-                const rect = l.getBoundingClientRect()
-                if (force || (rect.y < innerHeight * 2 && rect.y > -innerHeight * 2)) {
-                  const render_target = Q(l, '.render-target')
-                  const renderData = renders[l.id]
-                  
-                  try {
-                    // Handle object with html and load function (text files)
-                    if (typeof renderData === 'object' && renderData.html) {
-                      render_target.outerHTML = renderData.html
-                      renderData.load()
-                      setupVideoObservers()
-                    } else {
-                      render_target.outerHTML = renderData
-                      setupVideoObservers()
-                    }
-                  } catch {}
-                  delete renders[l.id]
-                  return false
-                } else {
-                  return true
-                }
-              })
-              
-              // Unload/reload items based on viewport distance
+              // Process all items
               QQ(list, '.item').forEach(item => {
-                const rect = item.getBoundingClientRect()
-                const tooFarAbove = rect.bottom < -innerHeight * 2
-                const tooFarBelow = rect.top > innerHeight * 3
-                const shouldUnload = tooFarAbove || tooFarBelow
+                // Skip if CSS-hidden (filtered by tag)
+                const isVisible = item.offsetParent !== null
+                if (!isVisible) return
                 
-                if (shouldUnload && !item.dataset.unloaded) {
-                  // Measure heights before unloading
+                const rect = item.getBoundingClientRect()
+                const inLoadRange = rect.y < innerHeight * 2 && rect.bottom > -innerHeight * 2
+                const inUnloadRange = rect.y < innerHeight * 3 && rect.bottom > -innerHeight * 2
+                
+                // Check if needs initial lazy load
+                const render_target = Q(item, '.render-target')
+                if (render_target && inLoadRange) {
+                  // Load content that hasn't been loaded yet
+                  const renderData = renders[item.id]
+                  if (renderData) {
+                    try {
+                      if (typeof renderData === 'object' && renderData.html) {
+                        render_target.outerHTML = renderData.html
+                        renderData.load()
+                      } else {
+                        render_target.outerHTML = renderData
+                      }
+                      setupVideoObservers()
+                      delete renders[item.id]
+                    } catch {}
+                  }
+                }
+                
+                // Handle unload/reload for performance
+                const isUnloaded = item.dataset.unloaded === 'true'
+                const shouldUnload = !inUnloadRange && !isUnloaded
+                const shouldReload = inUnloadRange && isUnloaded
+                
+                if (shouldUnload) {
+                  // Unload content that's far away
                   const itemHeight = rect.height
-                  const firstChild = item.querySelector(':first-child')
-                  const contentHeight = firstChild ? firstChild.getBoundingClientRect().height : itemHeight
-                  
-                  // Save content and labels
                   const labels = Array.from(item.querySelectorAll('.label')).map(l => l.outerHTML).join('')
+                  
                   item.dataset.unloaded = 'true'
                   item.dataset.savedContent = item.innerHTML
                   item.dataset.savedHeight = itemHeight
-                  
-                  // Replace with placeholder that looks like the card (account for padding-top: 1em)
                   item.style.minHeight = itemHeight + 'px'
                   item.innerHTML = `<div style="width: 100%; max-width: 100%; height: calc(100% - 1em); margin-top: 1em; border: 1px solid var(--color); display: flex; background: white;"></div>${labels}`
-                } else if (!shouldUnload && item.dataset.unloaded === 'true') {
-                  // Reload content when scrolling back into range
+                } else if (shouldReload) {
+                  // Reload content when scrolling back
                   item.innerHTML = item.dataset.savedContent
-                  // Keep height locked permanently to prevent jumping
                   item.style.minHeight = item.dataset.savedHeight + 'px'
                   delete item.dataset.unloaded
                   setupVideoObservers()
-                  // Don't delete savedHeight - keep it locked
                 }
               })
-            } catch {} finally {
-              scroll_in_progress = 0
+            } catch (e) {
+              console.error('handleScroll error:', e)
+            } finally {
+              window.scroll_in_progress = false
             }
+            })
           }
           on(window, 'scroll click', () => handleScroll())
           handleScroll()
