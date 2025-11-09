@@ -440,12 +440,7 @@
               
               // Trigger lazy loading for newly visible items after layout updates
               requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  // Force immediate load by clearing throttle state
-                  window.scroll_timeout = null
-                  window.scroll_in_progress = false
-                  if (window.handleScroll) window.handleScroll()
-                })
+                if (window.handleScroll) window.handleScroll()
               })
             ">${tagName}</button>
           `).join('')
@@ -736,51 +731,21 @@
               btn.classList.add('active')
               list.classList.add(`filter-${tagFromUrl}`)
               // Trigger lazy loading after filter is applied
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  window.scroll_timeout = null
-                  window.scroll_in_progress = false
-                  handleScroll()
-                })
-              })
+              requestAnimationFrame(() => handleScroll())
             }
           }
 
-          let scroll_in_progress = false
-          let scroll_timeout = null
           let user_scroll = false
           let start_ms = performance.now()
           
-          // Expose to window for tag button access
-          window.scroll_timeout = null
-          window.scroll_in_progress = false
-          
-          const handleScroll = window['handleScroll'] = () => {
-            if (window.scroll_in_progress) return
-            if (performance.now() - start_ms > 250) user_scroll = true
-            
-            // Throttle scroll handling
-            if (window.scroll_timeout) return
-            window.scroll_timeout = setTimeout(() => window.scroll_timeout = null, 100)
-            
-            window.scroll_in_progress = true
-            requestAnimationFrame(() => {
-            try {
-              
-              // Process all items
-              QQ(list, '.item').forEach(item => {
-                // Skip if CSS-hidden (filtered by tag)
-                const isVisible = item.offsetParent !== null
-                if (!isVisible) return
-                
-                const rect = item.getBoundingClientRect()
-                const inLoadRange = rect.y < innerHeight * 2 && rect.bottom > -innerHeight * 2
-                const inUnloadRange = rect.y < innerHeight * 3 && rect.bottom > -innerHeight * 2
-                
-                // Check if needs initial lazy load
+          // Use IntersectionObserver for efficient lazy loading
+          const loadObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                const item = entry.target
                 const render_target = Q(item, '.render-target')
-                if (render_target && inLoadRange) {
-                  // Load content that hasn't been loaded yet
+                
+                if (render_target) {
                   const renderData = renders[item.id]
                   if (renderData) {
                     try {
@@ -792,42 +757,55 @@
                       }
                       setupVideoObservers()
                       delete renders[item.id]
+                      loadObserver.unobserve(item)
                     } catch {}
                   }
                 }
+              }
+            })
+          }, { rootMargin: '200% 0px' })
+          
+          // Use IntersectionObserver for unloading far items
+          const unloadObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              const item = entry.target
+              
+              if (!entry.isIntersecting && !item.dataset.unloaded) {
+                // Unload item that's far away
+                const rect = item.getBoundingClientRect()
+                const itemHeight = rect.height
+                const labels = Array.from(item.querySelectorAll('.label')).map(l => l.outerHTML).join('')
                 
-                // Handle unload/reload for performance
-                const isUnloaded = item.dataset.unloaded === 'true'
-                const shouldUnload = !inUnloadRange && !isUnloaded
-                const shouldReload = inUnloadRange && isUnloaded
-                
-                if (shouldUnload) {
-                  // Unload content that's far away
-                  const itemHeight = rect.height
-                  const labels = Array.from(item.querySelectorAll('.label')).map(l => l.outerHTML).join('')
-                  
-                  item.dataset.unloaded = 'true'
-                  item.dataset.savedContent = item.innerHTML
-                  item.dataset.savedHeight = itemHeight
-                  item.style.minHeight = itemHeight + 'px'
-                  item.innerHTML = `<div style="width: 100%; max-width: 100%; height: calc(100% - 1em); margin-top: 1em; border: 1px solid var(--color); display: flex; background: white;"></div>${labels}`
-                } else if (shouldReload) {
-                  // Reload content when scrolling back
-                  item.innerHTML = item.dataset.savedContent
-                  item.style.minHeight = item.dataset.savedHeight + 'px'
-                  delete item.dataset.unloaded
-                  setupVideoObservers()
-                }
-              })
-            } catch (e) {
-              console.error('handleScroll error:', e)
-            } finally {
-              window.scroll_in_progress = false
-            }
+                item.dataset.unloaded = 'true'
+                item.dataset.savedContent = item.innerHTML
+                item.dataset.savedHeight = itemHeight
+                item.style.minHeight = itemHeight + 'px'
+                item.innerHTML = `<div style="width: 100%; max-width: 100%; height: calc(100% - 1em); margin-top: 1em; border: 1px solid var(--color); display: flex; background: white;"></div>${labels}`
+              } else if (entry.isIntersecting && item.dataset.unloaded === 'true') {
+                // Reload item when scrolling back
+                item.innerHTML = item.dataset.savedContent
+                item.style.minHeight = item.dataset.savedHeight + 'px'
+                delete item.dataset.unloaded
+                setupVideoObservers()
+              }
+            })
+          }, { rootMargin: '300% 0px' })
+          
+          // Observe all items
+          const observeItems = () => {
+            QQ(list, '.item').forEach(item => {
+              loadObserver.observe(item)
+              unloadObserver.observe(item)
             })
           }
-          on(window, 'scroll click', () => handleScroll())
-          handleScroll()
+          
+          const handleScroll = window['handleScroll'] = () => {
+            if (performance.now() - start_ms > 250) user_scroll = true
+            // Re-observe items when tags change (IntersectionObserver handles visibility)
+            observeItems()
+          }
+          
+          observeItems()
 
           // Set up iframe event listeners (for both immediate and lazy-loaded iframes)
           const setupIframeLinks = (frame) => {
