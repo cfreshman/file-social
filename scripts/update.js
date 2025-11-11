@@ -171,6 +171,7 @@ function extractAndUpdate() {
         'server/custom',
         'deploy/config.sh',
         '.gitignore',
+        '.file-social-version',
         'node_modules',
         '.git'
       ])
@@ -211,6 +212,16 @@ function extractAndUpdate() {
       console.log('📦 Installing dependencies...')
       
       execSync('npm install', { cwd: ROOT, stdio: 'inherit' })
+      
+      // Save current version
+      try {
+        const commit = execSync('curl -s https://api.github.com/repos/cfreshman/file-social/commits/m | grep \'"sha"\' | head -1 | cut -d\'"\' -f4', { encoding: 'utf8' }).trim()
+        if (commit) {
+          fs.writeFileSync(path.join(ROOT, '.file-social-version'), commit)
+        }
+      } catch (e) {
+        // Couldn't get version, that's ok
+      }
       
       console.log('\n✅ Update complete!')
       console.log('\nYour content was preserved:')

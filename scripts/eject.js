@@ -34,10 +34,24 @@ rl.question('Continue? (y/N) ', (answer) => {
     const gitDir = path.join(ROOT, '.git')
     const isGitRepo = fs.existsSync(gitDir)
     
+    // Save current version before deleting .git
     if (isGitRepo) {
-      console.log('\n🗑️  Deleting .git directory...')
+      try {
+        const commit = execSync('git rev-parse HEAD', { cwd: ROOT, encoding: 'utf8' }).trim()
+        fs.writeFileSync(path.join(ROOT, '.file-social-version'), commit)
+        console.log('\n💾 Saved current version:', commit.substring(0, 7))
+      } catch (e) {
+        // Couldn't get commit hash, create with "unknown"
+        fs.writeFileSync(path.join(ROOT, '.file-social-version'), 'unknown')
+      }
+      
+      console.log('🗑️  Deleting .git directory...')
       fs.rmSync(gitDir, { recursive: true, force: true })
       console.log('✅ Removed .git')
+    } else {
+      // Not a git repo (downloaded zip), create version file
+      fs.writeFileSync(path.join(ROOT, '.file-social-version'), 'unknown')
+      console.log('\n💾 Created version file')
     }
     
     // Switch .gitignore

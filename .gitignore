@@ -26,5 +26,6 @@ server/custom/
 .env
 *.log
 .DS_Store
+.file-social-version
 deploy/config.sh
 

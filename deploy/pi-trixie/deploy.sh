@@ -14,6 +14,24 @@ fi
 
 source deploy/config.sh
 
+# Check for updates
+if [ -f ".file-social-version" ]; then
+  CURRENT_VERSION=$(cat .file-social-version)
+  LATEST_VERSION=$(curl -s https://api.github.com/repos/cfreshman/file-social/commits/m | grep '"sha"' | head -1 | cut -d'"' -f4)
+  
+  if [ -n "$LATEST_VERSION" ] && [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+    echo "⚠️  Update available! Run 'npm run update' before deploying."
+    echo "   Current: ${CURRENT_VERSION:0:7}"
+    echo "   Latest:  ${LATEST_VERSION:0:7}"
+    echo ""
+    read -p "Continue anyway? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      exit 1
+    fi
+  fi
+fi
+
 # Validate config
 if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ] || [ -z "$DEPLOY_PATH" ]; then
   echo "Error: DEPLOY_HOST, DEPLOY_USER, and DEPLOY_PATH must be set in config.sh"
