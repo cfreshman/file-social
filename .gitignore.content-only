@@ -1,0 +1,33 @@
+# Use this .gitignore if you want to track ONLY your content, not the core app
+# Copy this over .gitignore: cp .gitignore.content-only .gitignore
+
+# Ignore all core application files
+server/
+!server/custom/
+scripts/
+public/*.html
+public/*.js
+public/*.css
+public/manifest.json
+public/icon.png
+public/lib/
+public/scripts/
+deploy/
+setup.sh
+package.json
+package-lock.json
+
+# Still ignore system files
+node_modules/
+.env
+*.log
+.DS_Store
+.file-social-update/
+
+# Track your content:
+# posts/ - tracked
+# public/config/ - tracked
+# public/data/ - tracked
+# server/custom/ - tracked
+# _01/ is auto-managed, you can track it if you want
+

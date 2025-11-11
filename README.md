@@ -2,7 +2,26 @@
 
 Self-hosted personal media stream, like html VSCO
 
-## Local Setup
+## Requirements
+
+- [Node.js](https://nodejs.org/)
+- Terminal app (Mac/Linux: Terminal, Windows: [Git Bash](https://gitforwindows.org/))
+- Recommended: [Cursor](https://cursor.sh) for editing files
+- For deployment: Ubuntu 24 server or Raspberry Pi (Trixie)
+
+## Getting Started
+
+**1. Get the code:**
+
+Clone it:
+```bash
+git clone https://github.com/cfreshman/file-social.git
+cd file-social
+```
+
+Or [download the zip](https://github.com/cfreshman/file-social/archive/refs/heads/m.zip) and extract it.
+
+**2. Set up:**
 
 ```bash
 npm run setup  # Installs dependencies, creates directories and config files
@@ -11,12 +30,17 @@ npm start
 
 Open http://localhost:7650
 
-## Requirements
+**3. Eject (recommended for non-technical users!):**
 
-- [Node.js](https://nodejs.org/)
-- Terminal app (Mac/Linux: Terminal, Windows: [Git Bash](https://gitforwindows.org/))
-- Recommended: [Cursor](https://cursor.sh) for editing files
-- For deployment: Ubuntu 24 server or Raspberry Pi (Trixie)
+Run this to set up content-only tracking:
+
+```bash
+npm run eject
+```
+
+This deletes the file-social git history and creates a fresh repo for YOUR content only. You'll use `npm run update` to get app updates (no merge conflicts!).
+
+Skip if you're a developer who wants to manage merging git updates.
 
 ## Adding Posts
 
@@ -125,13 +149,7 @@ Get the latest features and fixes:
 npm run update
 ```
 
-Your content is preserved:
-- `posts/` - Your posts
-- `public/config/` - Your config files
-- `public/data/` - Your data
-- `_01/` - Server-side persistence
-
-Everything else gets updated automatically.
+Your content is preserved (posts, config, data, custom routes). Everything else gets updated automatically.
 
 ## Daily Use
 

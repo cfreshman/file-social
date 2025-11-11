@@ -170,6 +170,7 @@ function extractAndUpdate() {
         '_01',
         'server/custom',
         'deploy/config.sh',
+        '.gitignore',
         'node_modules',
         '.git'
       ])
@@ -217,6 +218,7 @@ function extractAndUpdate() {
       console.log('  • public/config/')
       console.log('  • public/data/')
       console.log('  • server/custom/ (if it exists)')
+      console.log('  • .gitignore (if customized)')
       console.log('  • _01/')
       
       // Cleanup

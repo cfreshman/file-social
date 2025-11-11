@@ -10,6 +10,7 @@
     "dev": "node --watch server/index.js",
     "new": "node scripts/new-post.js",
     "update": "node scripts/update.js",
+    "eject": "node scripts/eject.js",
     "deploy": "./deploy/ubuntu-24/deploy.sh",
     "deploy:configure": "./deploy/ubuntu-24/configure.sh",
     "deploy:setup": "./deploy/ubuntu-24/setup.sh",
