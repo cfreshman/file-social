@@ -838,41 +838,69 @@
           })
           iframeObserver.observe(list, { childList: true, subtree: true })
           
-          // Keyboard navigation
+          // Keyboard navigation with tracked position
+          let lastNavigatedItem = null
+          let isNavigating = false
+          
+          // Clear navigation tracking on manual scroll
+          on(window, 'scroll', () => {
+            if (!isNavigating) {
+              lastNavigatedItem = null
+            }
+          })
+          
           on(window, 'keydown', (e) => {
-            const items = QQ('#list > .item')
+            // Only navigate visible items (not CSS-hidden by tag filters)
+            const allItems = QQ('#list > .item')
+            const items = Array.from(allItems).filter(item => item.offsetParent !== null)
             if (!items.length) return
             
-            // Find currently visible item (closest to viewport center)
-            const viewportCenter = window.innerHeight / 2
+            // Find current index
             let currentIndex = 0
-            let minDistance = Infinity
             
-            items.forEach((item, index) => {
-              const rect = item.getBoundingClientRect()
-              const itemCenter = rect.top + rect.height / 2
-              const distance = Math.abs(itemCenter - viewportCenter)
-              if (distance < minDistance) {
-                minDistance = distance
-                currentIndex = index
-              }
-            })
+            if (lastNavigatedItem && items.includes(lastNavigatedItem)) {
+              // Use last navigated item if it's still visible
+              currentIndex = items.indexOf(lastNavigatedItem)
+            } else {
+              // Otherwise find item closest to viewport top
+              let minDistance = Infinity
+              items.forEach((item, index) => {
+                const rect = item.getBoundingClientRect()
+                const distance = Math.abs(rect.top)
+                if (distance < minDistance) {
+                  minDistance = distance
+                  currentIndex = index
+                }
+              })
+            }
             
             // Navigate with arrow keys
             if (e.key === 'ArrowDown' || e.key === 'j') {
               e.preventDefault()
               const nextIndex = Math.min(currentIndex + 1, items.length - 1)
+              lastNavigatedItem = items[nextIndex]
+              isNavigating = true
               items[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              setTimeout(() => isNavigating = false, 500)
             } else if (e.key === 'ArrowUp' || e.key === 'k') {
               e.preventDefault()
               const prevIndex = Math.max(currentIndex - 1, 0)
+              lastNavigatedItem = items[prevIndex]
+              isNavigating = true
               items[prevIndex]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              setTimeout(() => isNavigating = false, 500)
             } else if (e.key === 'Home') {
               e.preventDefault()
+              lastNavigatedItem = items[0]
+              isNavigating = true
               items[0]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              setTimeout(() => isNavigating = false, 500)
             } else if (e.key === 'End') {
               e.preventDefault()
+              lastNavigatedItem = items[items.length - 1]
+              isNavigating = true
               items[items.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              setTimeout(() => isNavigating = false, 500)
             }
           })
         })

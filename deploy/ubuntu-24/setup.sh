@@ -21,10 +21,14 @@ if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
   exit 1
 fi
 
+# Default SSH port to 22 if not set
+DEPLOY_PORT=${DEPLOY_PORT:-22}
+
 echo "🔧 Setting up server at $DEPLOY_USER@$DEPLOY_HOST..."
 
 # Run setup commands on remote server
-ssh "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$DEPLOY_PORT" << 'EOF'
+  DEPLOY_PORT=$1
   set -e
   export DEBIAN_FRONTEND=noninteractive
   
@@ -48,7 +52,7 @@ ssh "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
   apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" nginx
   
   echo "🔒 Configuring firewall..."
-  ufw allow 22/tcp
+  ufw allow $DEPLOY_PORT/tcp
   ufw allow 80/tcp
   ufw allow 443/tcp
   ufw --force enable

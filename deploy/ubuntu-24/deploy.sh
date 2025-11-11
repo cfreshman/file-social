@@ -20,11 +20,15 @@ if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ] || [ -z "$DEPLOY_PATH" ]; then
   exit 1
 fi
 
+# Default SSH port to 22 if not set
+DEPLOY_PORT=${DEPLOY_PORT:-22}
+
 echo "🚀 Deploying file-social to $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
 
 # Sync files (excluding node_modules and git)
 echo "📦 Syncing files..."
 rsync -avz --delete \
+  -e "ssh -p $DEPLOY_PORT" \
   --exclude 'node_modules' \
   --exclude '.git' \
   --exclude '.DS_Store' \
@@ -35,7 +39,7 @@ rsync -avz --delete \
 
 # Run remote commands
 echo "📥 Installing dependencies..."
-ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$DEPLOY_PATH" << 'EOF'
+ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$DEPLOY_PATH" << 'EOF'
   DEPLOY_PATH=$1
   cd $DEPLOY_PATH
   npm install --production

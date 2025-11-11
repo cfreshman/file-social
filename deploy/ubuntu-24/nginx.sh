@@ -18,10 +18,13 @@ if [ -z "$DEPLOY_DOMAIN" ]; then
   exit 1
 fi
 
+# Default SSH port to 22 if not set
+DEPLOY_PORT=${DEPLOY_PORT:-22}
+
 echo "🌐 Setting up nginx for $DEPLOY_DOMAIN"
 
 # Deploy nginx config
-ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$DEPLOY_DOMAIN" << 'ENDSSH'
+ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$DEPLOY_DOMAIN" << 'ENDSSH'
   DOMAIN=$1
   
   # Write nginx config

@@ -22,12 +22,15 @@ fi
 
 # Default to port 7650 if not set
 SERVER_PORT=${SERVER_PORT:-7650}
+# Default SSH port to 22 if not set
+DEPLOY_PORT=${DEPLOY_PORT:-22}
 
 echo "🚀 Deploying file-social to $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
 
 # Sync files (excluding node_modules and git)
 echo "📦 Syncing files..."
 rsync -avz --delete \
+  -e "ssh -p $DEPLOY_PORT" \
   --exclude 'node_modules' \
   --exclude '.git' \
   --exclude '.DS_Store' \
@@ -38,7 +41,7 @@ rsync -avz --delete \
 
 # Run remote commands
 echo "📥 Installing dependencies..."
-ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$DEPLOY_PATH" "$SERVER_PORT" << 'EOF'
+ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$DEPLOY_PATH" "$SERVER_PORT" << 'EOF'
   DEPLOY_PATH=$1
   SERVER_PORT=$2
   cd $DEPLOY_PATH

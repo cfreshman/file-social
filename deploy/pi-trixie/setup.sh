@@ -23,12 +23,15 @@ fi
 
 # Default server port if not set
 SERVER_PORT=${SERVER_PORT:-7650}
+# Default SSH port to 22 if not set
+DEPLOY_PORT=${DEPLOY_PORT:-22}
 
 echo "🔧 Setting up Raspberry Pi at $DEPLOY_USER@$DEPLOY_HOST..."
 
 # Run setup commands on remote server
-ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$SERVER_PORT" << 'EOF'
+ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$SERVER_PORT" "$DEPLOY_PORT" << 'EOF'
   SERVER_PORT=$1
+  DEPLOY_PORT=$2
   set -e
   export DEBIAN_FRONTEND=noninteractive
   
@@ -53,7 +56,7 @@ ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s "$SERVER_PORT" << 'EOF'
     echo "Installing ufw..."
     sudo apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" ufw
   fi
-  sudo ufw allow 22/tcp
+  sudo ufw allow $DEPLOY_PORT/tcp
   sudo ufw allow $SERVER_PORT/tcp
   sudo ufw --force enable
   

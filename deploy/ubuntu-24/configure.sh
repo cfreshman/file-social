@@ -13,6 +13,10 @@ while [ -z "$DEPLOY_HOST" ]; do
   read -p "Enter your server IP address: " DEPLOY_HOST
 done
 
+# Get SSH port
+read -p "Enter SSH port (default: 22): " DEPLOY_PORT
+DEPLOY_PORT=${DEPLOY_PORT:-22}
+
 # Get domain (optional)
 read -p "Enter your domain name (optional, press Enter to skip): " DEPLOY_DOMAIN
 
@@ -29,6 +33,7 @@ cat > deploy/config.sh << EOF
 # SSH connection details
 DEPLOY_USER="$DEPLOY_USER"
 DEPLOY_HOST="$DEPLOY_HOST"
+DEPLOY_PORT="$DEPLOY_PORT"
 DEPLOY_PATH="$DEPLOY_PATH"
 
 # Domain name (optional)
@@ -60,10 +65,10 @@ echo "(You'll need to enter your server password)"
 echo ""
 
 if command -v ssh-copy-id &> /dev/null; then
-  ssh-copy-id -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST
+  ssh-copy-id -o StrictHostKeyChecking=no -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST
 else
   # Fallback for systems without ssh-copy-id
-  cat ~/.ssh/id_rsa.pub | ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+  cat ~/.ssh/id_rsa.pub | ssh -o StrictHostKeyChecking=no -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
 fi
 
 echo ""
