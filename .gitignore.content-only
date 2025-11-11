@@ -1,33 +1,26 @@
 # Use this .gitignore if you want to track ONLY your content, not the core app
-# Copy this over .gitignore: cp .gitignore.content-only .gitignore
+# Used by 'npm run eject'
 
-# Ignore all core application files
-server/
+# Ignore everything by default
+*
+
+# Allow these directories (must un-ignore parent dirs first)
+!posts/
+!posts/**
+
+!public/
+!public/config/
+!public/config/**
+!public/data/
+!public/data/**
+
+!server/
 !server/custom/
-scripts/
-public/*.html
-public/*.js
-public/*.css
-public/manifest.json
-public/icon.png
-public/lib/
-public/scripts/
-deploy/
-setup.sh
-package.json
-package-lock.json
+!server/custom/**
 
-# Still ignore system files
-node_modules/
-.env
-*.log
-.DS_Store
-.file-social-update/
+!deploy/
+!deploy/config.sh
 
-# Track your content:
-# posts/ - tracked
-# public/config/ - tracked
-# public/data/ - tracked
-# server/custom/ - tracked
-# _01/ is auto-managed, you can track it if you want
+# Allow .gitignore itself
+!.gitignore
 
