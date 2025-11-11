@@ -20,14 +20,20 @@ if [ -f ".file-social-version" ]; then
   LATEST_VERSION=$(curl -s https://api.github.com/repos/cfreshman/file-social/commits/m | grep '"sha"' | head -1 | cut -d'"' -f4)
   
   if [ -n "$LATEST_VERSION" ] && [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
-    echo "⚠️  Update available! Run 'npm run update' before deploying."
+    echo "⚠️  Update available!"
     echo "   Current: ${CURRENT_VERSION:0:7}"
     echo "   Latest:  ${LATEST_VERSION:0:7}"
     echo ""
-    read -p "Continue anyway? (y/N) " -n 1 -r
+    read -p "Run update now? (y/N) " -n 1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-      exit 1
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      npm run update
+      echo ""
+      echo "✅ Updated! Continuing with deploy..."
+      echo ""
+    else
+      echo "Skipping update. Deploying current version."
+      echo ""
     fi
   fi
 fi
