@@ -40,6 +40,13 @@ Edit files in `public/config/` (created by `npm run setup`):
 - **`-(anything)`** - Custom filter tags (any file starting with `-`)
 - **`-order`** - Tag display order
 
+**What you can safely edit:**
+- `posts/` - All your content
+- `public/config/` - All config files
+- `public/data/` - All your data files
+
+These are preserved when you run `npm run update`. (The `_01/` directory is also preserved but auto-managed by the app.)
+
 ## Deployment
 
 **All commands run from your computer.**
@@ -108,6 +115,22 @@ That guide walks through everything from flashing the SD card to getting a domai
 - **`.html`** - Custom HTML posts (use `<script src="/lib.js"></script>` for styling)
 - **`.url`** - File containing a URL to embed (images, videos, iframes)
 - **Images/videos** - Display directly
+
+## Updating file-social
+
+Get the latest features and fixes:
+
+```bash
+npm run update
+```
+
+Your content is preserved:
+- `posts/` - Your posts
+- `public/config/` - Your config files
+- `public/data/` - Your data
+- `_01/` - Server-side persistence
+
+Everything else gets updated automatically.
 
 ## Daily Use
 
