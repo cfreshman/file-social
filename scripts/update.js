@@ -230,4 +230,3 @@ function extractAndUpdate() {
       process.exit(1)
     }
 }
-
