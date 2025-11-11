@@ -22,6 +22,7 @@ public/data/*
 !public/data/.gitkeep
 !public/data/example/
 !public/data/example/**
+server/custom/
 .env
 *.log
 .DS_Store

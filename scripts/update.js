@@ -66,6 +66,7 @@ https.get(GITHUB_ZIP, (response) => {
         'public/config',
         'public/data',
         '_01',
+        'server/custom',
         'deploy/config.sh',
         'node_modules',
         '.git'
@@ -113,6 +114,7 @@ https.get(GITHUB_ZIP, (response) => {
       console.log('  • posts/')
       console.log('  • public/config/')
       console.log('  • public/data/')
+      console.log('  • server/custom/ (if it exists)')
       console.log('  • _01/')
       
       // Cleanup

@@ -44,6 +44,7 @@ Edit files in `public/config/` (created by `npm run setup`):
 - `posts/` - All your content
 - `public/config/` - All config files
 - `public/data/` - All your data files
+- `server/custom/` - Custom API routes (see `server/custom.example/` for template)
 
 These are preserved when you run `npm run update`. (The `_01/` directory is also preserved but auto-managed by the app.)
 

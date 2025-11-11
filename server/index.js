@@ -180,6 +180,16 @@ app.post('/api/counter', async (req, res) => {
   res.json({ count: store.data.count })
 })
 
+// Load custom routes (preserved on update)
+try {
+  const customRoutes = await import('./custom/index.js')
+  if (customRoutes.default) {
+    customRoutes.default(app, { _01, ROOT })
+  }
+} catch (e) {
+  // No custom routes directory, that's fine
+}
+
 app.listen(config.port, () => {
   console.log(`${config.name} running on http://localhost:${config.port}`)
 })
