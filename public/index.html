@@ -796,13 +796,47 @@
             QQ(list, '.item').forEach(item => {
               loadObserver.observe(item)
               unloadObserver.observe(item)
-              })
+            })
           }
           
           const handleScroll = window['handleScroll'] = () => {
             if (performance.now() - start_ms > 250) user_scroll = true
-            // Re-observe items when tags change (IntersectionObserver handles visibility)
-            observeItems()
+            
+            // When tags change, disconnect and reconnect observers to force re-evaluation
+            loadObserver.disconnect()
+            unloadObserver.disconnect()
+            
+            // Re-observe all items and manually check visible ones
+            requestAnimationFrame(() => {
+              QQ(list, '.item').forEach(item => {
+                // Check if item is visible (not filtered out by CSS)
+                if (item.offsetParent === null) return
+                
+                // Check if item is in viewport
+                const rect = item.getBoundingClientRect()
+                const isInView = rect.top < window.innerHeight * 3 && rect.bottom > -window.innerHeight * 2
+                
+                if (isInView) {
+                  // Manually trigger load for items already in view
+                  const render_target = Q(item, '.render-target')
+                  if (render_target) {
+                    const renderData = renders[item.id]
+                    if (renderData && !renderData.loaded) {
+                      render_target.innerHTML = renderData.html
+                      renderData.loaded = true
+                      
+                      // Set up iframe links if applicable
+                      const iframe = Q(render_target, 'iframe')
+                      if (iframe) setupIframeLinks(iframe)
+                    }
+                  }
+                }
+                
+                // Re-observe for future intersection changes
+                loadObserver.observe(item)
+                unloadObserver.observe(item)
+              })
+            })
           }
           
           observeItems()

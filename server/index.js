@@ -67,6 +67,13 @@ app.use('/posts', express.static(join(ROOT, config.postsDir)))
 
 // Server-side render index with metadata for social sharing
 app.get('/', async (req, res) => {
+  // Prevent browser caching of index.html
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  })
+  
   try {
     const item = new URLSearchParams(req.url.split('?')[1] || '').get('')?.split('?')[0]
     let html = await readFile(join(ROOT, config.publicDir, 'index.html'), 'utf-8')
