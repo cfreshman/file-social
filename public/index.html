@@ -7,6 +7,7 @@
   <script src="/css.js"></script>
   <script src="/hydrate.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
   <title>file-social</title>
 
   <link rel="icon" href="/icon.jpg">
@@ -486,6 +487,19 @@
                     return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: flex-start;"><img src="${src}" style="max-height: 400px; max-width: 100%; width: auto; height: auto; object-fit: contain;" /></div>`
                   case '.mp4': case '.webm':
                     return renderVideo(src)
+                  case '.glb': case '.gltf':
+                    return `<div style="background: white; padding: .5em; width: 100%; box-sizing: border-box; display: flex; justify-content: center;">
+                      <model-viewer 
+                        src="${src}" 
+                        alt="3D model" 
+                        auto-rotate 
+                        camera-controls 
+                        loading="eager"
+                        style="width: 100%; height: 400px; --poster-color: transparent; --progress-bar-height: 0;"
+                        exposure="1"
+                        shadow-intensity="1">
+                      </model-viewer>
+                    </div>`
                   case '.html': case '.htm':
                     return `<iframe src="${src}" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms" onload="
                   const L = event.target
@@ -545,6 +559,7 @@
                   return `<div class='content'>Error loading URL file</div>`
                 case '.png': case '.jpg': case '.jpeg': case '.gif': case '.webp':
                 case '.mp4': case '.webm':
+                case '.glb': case '.gltf':
                 case '.html': case '.htm': case '.href.txt':
                   return renderByExtension(path, extension)
                 case '.txt': case '.md':
