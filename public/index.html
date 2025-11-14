@@ -325,6 +325,7 @@
             let backdrop = undefined
             let pins = [[], new Set()]
             let tagOrder = []
+            const hideFromMain = new Set() // Items with "-" prefix in ANY tag file
             
             for (const configFile of configFiles) {
               const tagName = configFile.slice(1) // Remove leading '-'
@@ -336,27 +337,53 @@
               if (tagName === 'backdrop') {
                 backdrop = content.filter(x => x.trim())[0]
               } else if (tagName === 'pins') {
-                pins = [content, new Set(content)]
+                // Parse pins, handling "-" prefix
+                const parsedPins = content.map(entry => {
+                  if (entry.startsWith('-')) {
+                    const path = entry.slice(1)
+                    hideFromMain.add(path)
+                    return path
+                  }
+                  return entry
+                })
+                pins = [parsedPins, new Set(parsedPins)]
               } else if (tagName === 'order') {
                 tagOrder = content
               } else {
-                // Regular tag
-                tags[tagName] = new Set(content)
+                // Regular tag - parse entries for "-" prefix
+                const parsedEntries = content.map(entry => {
+                  if (entry.startsWith('-')) {
+                    const path = entry.slice(1)
+                    hideFromMain.add(path)
+                    return path
+                  }
+                  return entry
+                })
+                tags[tagName] = new Set(parsedEntries)
               }
             }
             
-            return { files, tags, pins, backdrop, tagOrder }
+            // Items hidden from main if ANY tag file uses "-" prefix
+            return { files, tags, pins, backdrop, tagOrder, hideFromMain }
           })
-        .then(async ({ files, tags, pins, backdrop, tagOrder }) => {
-          console.debug('render file-social', {files, tags, pins, backdrop, tagOrder})
+        .then(async ({ files, tags, pins, backdrop, tagOrder, hideFromMain }) => {
+          console.debug('render file-social', {files, tags, pins, backdrop, tagOrder, hideFromMain})
           
           // Add dynamic CSS for tag filters
           const style = document.createElement('style')
-          style.textContent = Object.keys(tags).map(tagName => `
+          style.textContent = `
+            /* Hide items marked with "-" prefix when no filter active */
+            #list:not([class*="filter-"]) > .item.hide-from-main:not(.pinned) {
+              display: none;
+            }
+            
+            /* Tag filters */
+            ${Object.keys(tags).map(tagName => `
             #list.filter-${tagName} > .item:not(.tag-${tagName}):not(.pinned) {
               display: none;
             }
-          `).join('\n')
+            `).join('\n')}
+          `
           document.head.appendChild(style)
           
           // Set backdrop if provided
@@ -626,9 +653,11 @@
                 }
                 
                 const itemPinned = pinned && isPinnedVersion
+                const shouldHideFromMain = hideFromMain.has(name) && !itemPinned
                 const itemTagClasses = [
                   ...itemTags.map(t => `tag-${t}`),
-                  itemPinned ? 'pinned' : ''
+                  itemPinned ? 'pinned' : '',
+                  shouldHideFromMain ? 'hide-from-main' : ''
                 ].filter(Boolean).join(' ')
                 
                 return `

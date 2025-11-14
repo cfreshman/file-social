@@ -64,6 +64,11 @@ Edit files in `public/config/` (created by `npm run setup`):
 - **`-(anything)`** - Custom filter tags (any file starting with `-`)
 - **`-order`** - Tag display order
 
+**Prefix entries with `-` to hide from main feed:**
+- `-2025/11/14/0.html` in `-pins` → only shows pinned at top, not in chronological feed
+- `-2025/11/01/1.html` in `-best` → only shows when "best" filter is active
+- If ANY tag file has an item with `-` prefix, it's hidden from main feed
+
 **What you can safely edit:**
 - `posts/` - All your content
 - `public/config/` - All config files
