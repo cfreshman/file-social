@@ -50,7 +50,7 @@ npm run new
 
 Creates a timestamped file in `posts/`. Or drag any file into `posts/`.
 
-**Supported:** .txt, .jpg, .png, .gif, .webp, .mp4, .webm, .html, .url, .glb, .gltf (3D models)
+**Supported:** .txt, .md (markdown), .jpg, .png, .gif, .webp, .mp4, .webm, .html, .url, .glb, .gltf (3D models)
 
 Posts display in reverse alphabetical order (newest first). It's recommended to use the nesting system with year/month/day folders.
 
@@ -142,10 +142,13 @@ That guide walks through everything from flashing the SD card to getting a domai
 ## File Types
 
 - **`.txt`** - Plain text
+- **`.md`** - Markdown with formatting (headings, lists, code blocks, links, etc)
 - **`.html`** - Custom HTML posts (use `<script src="/lib.js"></script>` for styling)
 - **`.url`** - File containing a URL to embed (images, videos, iframes)
 - **Images/videos** - Display directly
 - **`.glb` / `.gltf`** - 3D models with interactive viewer (rotate, zoom, auto-rotate)
+
+**Example files:** Check `public/data/example/` for templates
 
 ## Updating file-social
 

@@ -8,6 +8,7 @@
   <script src="/hydrate.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <title>file-social</title>
 
   <link rel="icon" href="/icon.jpg">
@@ -200,6 +201,70 @@
       #list > .item > .palette {
         position: absolute;
         top: 0; left: 100%; margin: 0 .5em;
+      }
+      
+      /* Markdown content styling */
+      #list > .item > .content.markdown {
+        white-space: normal;
+        display: block;
+      }
+      #list > .item > .content.markdown h1, 
+      #list > .item > .content.markdown h2, 
+      #list > .item > .content.markdown h3 {
+        margin-top: 0.5em;
+        margin-bottom: 0.25em;
+        display: block;
+      }
+      #list > .item > .content.markdown h1 { font-size: 1.5em; font-weight: bold; }
+      #list > .item > .content.markdown h2 { font-size: 1.25em; font-weight: bold; }
+      #list > .item > .content.markdown h3 { font-size: 1.1em; font-weight: bold; }
+      #list > .item > .content.markdown p { margin: 0.5em 0; display: block; }
+      #list > .item > .content.markdown ul, 
+      #list > .item > .content.markdown ol { 
+        margin: 0.5em 0; 
+        padding-left: 2em; 
+        display: block;
+      }
+      #list > .item > .content.markdown li { margin: 0.25em 0; display: list-item; }
+      #list > .item > .content.markdown code { 
+        background: #f0f0f0; 
+        padding: 0.1em 0.3em; 
+        border-radius: 3px;
+        font-family: inherit;
+      }
+      #list > .item > .content.markdown pre {
+        background: #f0f0f0;
+        padding: 0.5em;
+        border-radius: 3px;
+        overflow-x: auto;
+        display: block;
+      }
+      #list > .item > .content.markdown pre code {
+        background: none;
+        padding: 0;
+      }
+      #list > .item > .content.markdown blockquote {
+        border-left: 3px solid #ddd;
+        margin: 0.5em 0;
+        padding-left: 1em;
+        color: #666;
+        display: block;
+      }
+      #list > .item > .content.markdown a {
+        color: #0066cc !important;
+        text-decoration: underline;
+        mix-blend-mode: normal !important;
+      }
+      #list > .item > .content.markdown a:visited {
+        color: #551a8b !important;
+      }
+      #list > .item > .content.markdown a:hover {
+        color: #003366 !important;
+      }
+      #list > .item > .content.markdown img {
+        max-width: 100%;
+        height: auto;
+        display: block;
       }
     </style>
     <script>
@@ -590,7 +655,33 @@
                 case '.glb': case '.gltf':
                 case '.html': case '.htm': case '.href.txt':
                   return renderByExtension(path, extension)
-                case '.txt': case '.md':
+                case '.md':
+                  // Markdown files - render as HTML
+                  const mdContentId = `content-${name.replace(/[^a-zA-Z0-9]/g, '-')}`
+                  return {
+                    html: `<div class='content markdown' id="${mdContentId}" style="background: white; padding: .5em;">[loading...]</div>`,
+                    load: async () => {
+                      try {
+                        const res = await fetch(path)
+                        const text = await res.text()
+                        const el = document.getElementById(mdContentId)
+                        if (el && window.marked) {
+                          // Configure marked to open links in new tab
+                          const renderer = new marked.Renderer()
+                          const originalLinkRenderer = renderer.link
+                          renderer.link = function(href, title, text) {
+                            const html = originalLinkRenderer.call(this, href, title, text)
+                            return html.replace(/^<a /, '<a target="_blank" rel="noopener noreferrer" ')
+                          }
+                          el.innerHTML = marked.parse(text, { renderer })
+                        }
+                      } catch (e) {
+                        const el = document.getElementById(mdContentId)
+                        if (el) el.textContent = '[error loading file]'
+                      }
+                    }
+                  }
+                case '.txt':
                 default:
                   // For text files, render directly as text content
                   const contentId = `content-${name.replace(/[^a-zA-Z0-9]/g, '-')}`
