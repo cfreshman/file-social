@@ -495,6 +495,7 @@
                         auto-rotate 
                         camera-controls 
                         loading="eager"
+                        interaction-prompt="none"
                         style="width: 100%; height: 400px; --poster-color: transparent; --progress-bar-height: 0; user-select: none; -webkit-user-select: none;"
                         exposure="1"
                         shadow-intensity="1">
@@ -583,7 +584,7 @@
                   }
               }
             })
-            .map((render, i) => {
+            .flatMap((render, i) => {
               const encoded = processedFiles[i].file
               const url = processedFiles[i].url
               const name = decodeURIComponent(encoded)
@@ -597,34 +598,43 @@
               
               // Check all tags for this item
               const itemTags = Object.keys(tags).filter(tagName => tags[tagName].has(name))
-              const tagClasses = [
-                ...itemTags.map(t => `tag-${t}`),
-                pinned ? 'pinned' : ''
-              ].filter(Boolean).join(' ')
-              
               itemTags.length && log({name, tags: itemTags, pinned})
-              let load_on_scroll_into_view
               
-              // Handle object return (text files with lazy loader)
-              if (typeof render === 'object' && render.html) {
-                renders[id] = render
-                if (pinned) {
-                  load_on_scroll_into_view = render.html
-                  render.load() // Load immediately for pinned
+              // Generate item HTML helper
+              const createItemHTML = (isPinnedVersion) => {
+                let load_on_scroll_into_view
+                const itemId = isPinnedVersion ? `${id}-pinned` : id
+                
+                // Handle object return (text files with lazy loader)
+                if (typeof render === 'object' && render.html) {
+                  if (!isPinnedVersion) renders[itemId] = render
+                  if (pinned && isPinnedVersion) {
+                    load_on_scroll_into_view = render.html
+                    render.load() // Load immediately for pinned
+                  } else if (pinned && !isPinnedVersion) {
+                    // Unpinned copy uses lazy loading
+                    load_on_scroll_into_view = `<div class='render-target content'></div>`
+                    renders[itemId] = render
+                  } else {
+                    load_on_scroll_into_view = `<div class='render-target content'></div>`
+                  }
+                } else if (pinned && isPinnedVersion) {
+                  load_on_scroll_into_view = render
                 } else {
+                  if (!isPinnedVersion) renders[itemId] = render
                   load_on_scroll_into_view = `<div class='render-target content'></div>`
                 }
-              } else if (pinned) {
-                load_on_scroll_into_view = render
-              } else {
-                renders[id] = render
-                load_on_scroll_into_view = `<div class='render-target content'></div>`
-              }
-              
-              return `
-            <div class="item ${tagClasses}" id="${id}" style="
-            order: ${pinned ? -(pins[0].length - pins[0].indexOf(encoded)) : i};
-            ${pinned ? `
+                
+                const itemPinned = pinned && isPinnedVersion
+                const itemTagClasses = [
+                  ...itemTags.map(t => `tag-${t}`),
+                  itemPinned ? 'pinned' : ''
+                ].filter(Boolean).join(' ')
+                
+                return `
+            <div class="item ${itemTagClasses}" id="${itemId}" style="
+            order: ${itemPinned ? -(pins[0].length - pins[0].indexOf(encoded)) : i * 2};
+            ${itemPinned ? `
             margin-top: calc(-1em - 1px) !important;
             ` : ''}
             ">
@@ -707,6 +717,14 @@
                 }</div>` : ''
               }
             </div>`
+              }
+              
+              // Return array: pinned posts appear twice (pinned + normal), regular posts once
+              if (pinned) {
+                return [createItemHTML(true), createItemHTML(false)]
+              } else {
+                return [createItemHTML(false)]
+              }
             })
             .join('\n')
 
@@ -824,8 +842,9 @@
               // Allow RELOAD during scroll (it's loading content back in)
               // But block UNLOAD during scroll (it modifies existing layout)
               if (!entry.isIntersecting && !item.dataset.unloaded) {
-                // UNLOAD - skip if scrolling
+                // UNLOAD - skip if scrolling or if item is pinned
                 if (isScrolling) return
+                if (item.classList.contains('pinned')) return
                 
                 // Unload item that's far away
                 const rect = item.getBoundingClientRect()
