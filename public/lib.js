@@ -2,24 +2,8 @@
 // Loads all dependencies in correct order
 // Usage: <script src="/lib.js"></script>
 
-(async () => {
-  const loadScript = (src) => {
-    return new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) {
-        resolve()
-        return
-      }
-      const script = document.createElement('script')
-      script.src = src
-      script.onload = resolve
-      script.onerror = reject
-      document.head.appendChild(script)
-    })
-  }
-
-  // Load in correct order
-  await loadScript('/helpers.js')
-  await loadScript('/css.js')
-  await loadScript('/hydrate.js')
-})()
+// Use document.write to inject scripts - blocks parsing but browser can parallelize fetches
+document.write('<script src="/helpers.js"></script>')
+document.write('<script src="/css.js"></script>')
+document.write('<script src="/hydrate.js"></script>')
 
