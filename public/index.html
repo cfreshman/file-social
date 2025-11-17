@@ -576,7 +576,7 @@
                       L.height = 0
                       L.height = L.contentWindow.document.documentElement.scrollHeight + 20
                       const min0 = L.height
-                      const height = min0 === 0 ? min400 : min0
+                      const height = min0 <= 20 ? min400 : min0
                       const changed = height !== prev_height
                       prev_height = height
                       
@@ -588,6 +588,7 @@
                       
                       return changed
                     } catch(e) {
+                      L.height = 400 + 20
                       return false
                     }
                   }
