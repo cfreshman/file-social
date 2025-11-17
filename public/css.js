@@ -153,6 +153,10 @@ if (!window['css.js']) {
       iframe {
         filter: var(--filter-invert);
       }
+      button {
+        -webkit-appearance: none;
+        color: var(--color, #101010);
+      }
       ${Object.keys(css.mixin).map(k => `.${k.replace(/_/g, '-')}{${css.mixin[k]}}`).join('')}
       .spacer {
         flex-grow: 1;
