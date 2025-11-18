@@ -22,7 +22,7 @@ if (!existsSync(postsPath)) {
 const METADATA_PREFIX = '-'
 const HIDDEN_PREFIX = '.'
 const COMMENT_PREFIX = '//'
-const MEDIA_EXTENSIONS = ['.html', '.htm', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.webm', '.url', '.txt', '.md']
+const MEDIA_EXTENSIONS = ['.html', '.htm', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.webm', '.url', '.txt', '.md', '.pdf', '.glb', '.gltf']
 
 const app = express()
 

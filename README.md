@@ -50,7 +50,7 @@ npm run new
 
 Creates a timestamped file in `posts/`. Or drag any file into `posts/`.
 
-**Supported:** .txt, .md (markdown), .jpg, .png, .gif, .webp, .mp4, .webm, .html, .url, .glb, .gltf (3D models)
+**Supported:** .txt, .md (markdown), .jpg, .png, .gif, .webp, .mp4, .webm, .html, .url, .pdf, .glb, .gltf (3D models)
 
 Posts display in reverse alphabetical order (newest first). It's recommended to use the nesting system with year/month/day folders.
 
