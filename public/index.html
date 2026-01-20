@@ -72,7 +72,7 @@
     <button style="
     position: sticky;
     bottom: .5em; margin-top: 100vh;
-    z-index: 1;
+    z-index: 100100100;
     transform: translate3d(0,0,0);
     " onclick="
     event.preventDefault()
@@ -727,7 +727,8 @@
             <div class="item ${itemTagClasses}" id="${itemId}" style="
             order: ${itemPinned ? -(pins[0].length - pins[0].indexOf(encoded)) : i * 2};
             ${itemPinned ? `
-            margin-top: calc(-1em - 1px) !important;
+            margin-top: -1px !important;
+            padding-top: 0 !important;
             ` : ''}
             ">
               ${name.includes('rated-R')
